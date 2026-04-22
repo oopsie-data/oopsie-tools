@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OopsieData</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      :root { color-scheme: dark; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #1a1a2e;
+        color: #eee;
+        min-height: 100vh;
+      }
+      .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px 16px;
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #333;
+      }
+      header h1 {
+        font-size: 1.5rem;
+        margin: 0;
+        min-width: 0;
+      }
+      .header-back { flex-shrink: 0; }
+      .statusline { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; color: #cbd5e1; }
+
+      .context-bar {
+        background: #16213e;
+        border: 1px solid #2a3f5f;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+      }
+      .context-bar-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #64748b;
+        margin-bottom: 8px;
+      }
+      .context-bar-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px 18px;
+        font-size: 0.85rem;
+        line-height: 1.45;
+      }
+      .context-bar-grid .ctx-row-wide { grid-column: 1 / -1; }
+      .context-bar .ctx-row {
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+        gap: 6px;
+        min-width: 0;
+      }
+      .context-bar .ctx-label {
+        flex: 0 0 auto;
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .context-bar .ctx-label::after {
+        content: ':';
+        color: #64748b;
+        font-weight: 500;
+        margin-left: 1px;
+      }
+      .context-bar .ctx-value {
+        flex: 1;
+        min-width: 0;
+        color: #e2e8f0;
+        word-break: break-word;
+      }
+      .context-bar .ctx-value.statusline { color: #cbd5e1; }
+
+      .main-content { display: grid; grid-template-columns: 260px 1fr 400px; gap: 20px; }
+
+      /* Left: h5 tree (styled like sample-list) */
+      .sidebar {
+        background: #16213e;
+        border-radius: 8px;
+        padding: 10px;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+      }
+      .h5-header { display:flex; align-items:center; margin-bottom: 10px; padding: 0 5px; }
+      .h5-title { font-size: 0.9rem; color: #94a3b8; font-weight: 600; }
+      .h5-search { width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #333; border-radius: 6px; background: #1a1a2e; color: #fff; font-size: 0.95rem; }
+      .muted { opacity: 0.85; color: #94a3b8; }
+
+      button { padding: 10px 14px; border-radius: 6px; border: 1px solid #333; cursor: pointer; font-weight: 600; background: transparent; color: #60a5fa; }
+      button:hover { background: #1e3a5f; }
+      button.primary { background: #4ade80; color: #000; border: none; }
+      button.primary:hover { background: #22c55e; }
+      button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+      /* Center: videos (styled like video-section) */
+      .video-section {
+        background: #16213e;
+        border-radius: 8px;
+        padding: 20px;
+      }
+      .video-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #94a3b8;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* Right: questionnaire (styled like form-section) */
+      .form-section {
+        background: #16213e;
+        border-radius: 8px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+      }
+      .form-group { margin-bottom: 20px; }
+      label { display: block; margin-bottom: 8px; font-weight: 500; }
+      .required::after { content: " *"; color: #f87171; }
+      input[type="text"], textarea, select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #333;
+        border-radius: 6px;
+        background: #1a1a2e;
+        color: #fff;
+        font-size: 0.95rem;
+      }
+      textarea { min-height: 100px; resize: vertical; }
+      select { cursor: pointer; }
+      input[type="radio"], input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+      .opt-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-weight: 500; cursor: pointer; }
+      .opt-row input { margin: 0; width: 18px; }
+
+      /* Tooltip styling similar to annotator.html */
+      .info-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: #1e3a5f;
+        color: #60a5fa;
+        font-size: 0.65rem;
+        font-style: normal;
+        cursor: help;
+        flex-shrink: 0;
+        position: relative;
+      }
+      .info-tooltip {
+        display: none;
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #1e293b;
+        color: #cbd5e1;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        width: 280px;
+        z-index: 100;
+        pointer-events: none;
+        white-space: normal;
+      }
+      .info-icon:hover .info-tooltip { display: block; }
+
+      /* Tree/list styling similar to sample list */
+      .tree-row { display:flex; align-items:center; gap: 8px; padding: 8px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; transition: background 0.15s; }
+      .tree-row:hover { background: #1a1a2e; }
+      .tree-row.active { background: #1e3a5f; color: #60a5fa; border: none; }
+      .tree-arrow { width: 14px; display:inline-block; opacity: 0.75; color: #94a3b8; }
+      .tree-label { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+      .tick { color: #4ade80; font-weight: 800; }
+
+      /* Videos: equal sizing */
+      /* Videos: vertical stack for larger size */
+      .videos-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+      .video-card { margin-bottom: 10px; }
+      .video-card video { width: 100%; height: 380px; object-fit: contain; border-radius: 4px; background: #000; }
+
+      /* Task instruction box in right panel */
+      .task-instruction-box {
+        background: #0f172a;
+        border: 1px solid #2a3f5f;
+        border-radius: 6px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+      }
+      .task-instruction-box-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #60a5fa;
+        margin-bottom: 4px;
+      }
+      .task-instruction-box-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+
+      /* Metadata panel above questionnaire */
+      .meta-panel {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        font-size: 0.85rem;
+      }
+      .meta-instruction {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+      .meta-instruction-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #60a5fa;
+        margin-bottom: 3px;
+      }
+      .meta-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #1e293b;
+      }
+      .meta-item { display: flex; flex-direction: column; gap: 1px; }
+      .meta-key { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; }
+      .meta-val { font-size: 0.8rem; color: #cbd5e1; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+
+      /* Questionnaire container */
+      #questionnaire h3 { margin-bottom: 12px; }
+
+      @media (max-width: 900px) {
+        .context-bar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 520px) {
+        .context-bar-grid { grid-template-columns: 1fr; }
+        .context-bar-grid .ctx-row-wide { grid-column: auto; }
+      }
+
+      @media (max-width: 1200px) {
+        .main-content { grid-template-columns: 1fr; }
+        .sidebar { max-height: none; }
+        .videos-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>OopsieData</h1>
+        <button class="header-back" id="backToTaskBtn" type="button" title="Return to instruction / next rollout">Start next Rollout</button>
+      </header>
+
+      <section class="context-bar" id="sessionContextBar" aria-label="Current session">
+        <div class="context-bar-grid muted">
+          <div class="ctx-row">
+            <span class="ctx-label">Status</span>
+            <span class="ctx-value statusline" id="statusLine">Loading…</span>
+          </div>
+          <div class="ctx-row">
+            <span class="ctx-label">Annotator</span>
+            <span class="ctx-value" id="sessionAnnotatorName">—</span>
+          </div>
+          <div class="ctx-row">
+            <span class="ctx-label">File</span>
+            <span class="ctx-value" id="sessionH5Name">—</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="main-content">
+        <div class="sidebar">
+          <div class="h5-header">
+            <div class="h5-title">HDF5 files</div>
+          </div>
+          <input id="h5Search" class="h5-search" type="text" placeholder="Search…" />
+          <div class="muted" id="h5Count"></div>
+          <div id="h5List" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="video-section">
+          <div id="instructionCard" style="display:none;">
+            <h3 style="margin-bottom:10px;">1) Provide language instruction</h3>
+            <label for="instruction">Instruction</label>
+            <input id="instruction" type="text" placeholder="e.g., pick up the red block and place it in the bin" />
+            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="primary" id="submitInstructionBtn">Submit instruction</button>
+              <button id="repeatInstructionBtn" style="display:none;" type="button">Repeat last</button>
+            </div>
+          </div>
+
+          <div id="runningCard" style="display:none;">
+            <h3 style="margin-bottom:10px;">2) Policy is running</h3>
+            <div class="muted">Waiting for rollout to finish…</div>
+          </div>
+
+          <div id="annotateCard" style="display:none;">
+            <div class="videos-grid" id="videosRow"></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="task-instruction-box">
+            <div class="task-instruction-box-label">Task instruction</div>
+            <div class="task-instruction-box-value" id="sessionTaskInstruction">—</div>
+          </div>
+          <div id="metadataPanel" style="display:none;"></div>
+          <div id="questionnaire"></div>
+          <div style="margin-top:12px;">
+            <button class="primary" id="saveBtn">Save Annotation</button>
+            <span class="muted" id="saveMsg" style="margin-left:10px;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const el = (id) => document.getElementById(id);
+
+      /** Human-readable task state for the status line (API still uses short codes). */
+      function taskStatusLabel(status, browseOnly) {
+        const labels = {
+          idle: "Awaiting Instruction",
+          pending: "Awaiting Rollout Start",
+          running: "Robot Executing",
+          annotating: "Annotation in Progress",
+        };
+        if (status == null || status === "") return "—";
+        const key = String(status);
+        if (browseOnly && key === "idle") {
+          return "Annotation in Progress";
+        }
+        return labels[key] ?? key;
+      }
+
+      function syncHeaderPanel(st) {
+        const annEl = el("sessionAnnotatorName");
+        const fileEl = el("sessionH5Name");
+        const taskEl = el("sessionTaskInstruction");
+        if (annEl) {
+          annEl.textContent =
+            typeof ANNOTATOR_NAME !== "undefined" && ANNOTATOR_NAME != null && String(ANNOTATOR_NAME).trim() !== ""
+              ? String(ANNOTATOR_NAME)
+              : "—";
+        }
+        let file = "—";
+        let fileTitle = "";
+        let task = "—";
+        if (browseRelPath) {
+          const parts = browseRelPath.split("/").filter(Boolean);
+          file = parts.length ? parts[parts.length - 1] : browseRelPath;
+          fileTitle = browseRelPath;
+          const md = currentBrowseSample?.metadata || {};
+          const li = String(md.language_instruction || "").trim();
+          if (li) task = li;
+        } else if (st && st.status === "annotating" && st.current_sample) {
+          const cs = st.current_sample;
+          const li = String(cs.language_instruction || st.last_instruction || "").trim();
+          if (li) task = li;
+          const sid = cs.sample_id;
+          if (sid) {
+            const s = String(sid);
+            file = s.endsWith(".h5") ? s : `${s}.h5`;
+            fileTitle = file;
+          }
+        } else if (st && st.status === "running") {
+          const li = String(st.last_instruction || "").trim();
+          if (li) task = li;
+        }
+        if (fileEl) {
+          fileEl.textContent = file;
+          fileEl.title = fileTitle;
+        }
+        if (taskEl) taskEl.textContent = task;
+      }
+
+      async function jget(url) {
+        const r = await fetch(url);
+        return await r.json();
+      }
+      async function jpost(url, body) {
+        const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
+        const text = await r.text();
+        let data = null;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch (e) {
+          throw new Error(text.trim().slice(0, 300) || `HTTP ${r.status}`);
+        }
+        if (!r.ok) {
+          throw new Error((data && data.error) || text.trim().slice(0, 300) || `HTTP ${r.status}`);
+        }
+        return data;
+      }
+
+      function showOnly(which) {
+        for (const id of ["instructionCard", "runningCard", "annotateCard"]) {
+          el(id).style.display = (id === which) ? "" : "none";
+        }
+        // Keep questionnaire panel visible only when annotating/browsing
+        if (which === "annotateCard") {
+          el("questionnaire").style.display = "";
+          el("saveBtn").style.display = "";
+          el("saveMsg").style.display = "";
+        } else {
+          el("metadataPanel").style.display = "none";
+          el("questionnaire").style.display = "none";
+          el("saveBtn").style.display = "none";
+          el("saveMsg").style.display = "none";
+        }
+      }
+
+      function renderVideos(videoUrls) {
+        const row = el("videosRow");
+        row.innerHTML = "";
+        const entries = Object.entries(videoUrls || {});
+        for (const [cam, url] of entries) {
+          const wrap = document.createElement("div");
+          wrap.innerHTML = `
+            <div class="video-card">
+              <div class="video-label">${String(cam)} view</div>
+              <video controls preload="metadata" src="${url}"></video>
+            </div>
+          `;
+          row.appendChild(wrap);
+        }
+      }
+
+      function renderMetadata(meta) {
+        const panel = el("metadataPanel");
+        if (!meta || Object.keys(meta).length === 0) {
+          panel.style.display = "none";
+          panel.innerHTML = "";
+          return;
+        }
+        const episodeId = String(meta.episode_id || "").trim();
+        const operator = String(meta.operator_name || "").trim();
+        const relPath = String(meta.rel_path || "").trim();
+        const sampleId = String(meta.sample_id || "").trim();
+
+        const extraRows = [];
+        if (episodeId) extraRows.push({ k: "Episode", v: episodeId });
+        if (operator)  extraRows.push({ k: "Operator", v: operator });
+        if (relPath && relPath !== episodeId) extraRows.push({ k: "File", v: relPath });
+        else if (sampleId && !relPath) extraRows.push({ k: "Sample", v: sampleId });
+
+        if (!extraRows.length) {
+          panel.style.display = "none";
+          panel.innerHTML = "";
+          return;
+        }
+
+        panel.innerHTML = `
+          <div class="meta-panel">
+            <div class="meta-row" style="margin-top:0;padding-top:0;border-top:none;">
+              ${extraRows.map(r => `<div class="meta-item"><span class="meta-key">${r.k}</span><span class="meta-val">${r.v}</span></div>`).join("")}
+            </div>
+          </div>`;
+        panel.style.display = "";
+      }
+
+      function inputForQuestion(q) {
+        const name = q.name || q.id || q.key || "";
+        const label = q.label || q.prompt || name;
+        const type = (q.type || "text").toLowerCase();
+        const required = q.required ? "data-required='1'" : "";
+        const optLabel = (o) => (typeof o === "string" ? o : (o && o.name ? String(o.name) : ""));
+        const optInfo = (o) => (typeof o === "object" && o && o.long_form)
+          ? `<span class="info-icon">ⓘ<span class="info-tooltip">${String(o.long_form)}</span></span>`
+          : "";
+        if (type === "select" || type === "dropdown") {
+          const opts = (q.options || []).map(o => `<option value="${optLabel(o)}">${optLabel(o)}</option>`).join("");
+          return `
+            <div class="form-group" data-question-id="${name}" data-qtype="${type}">
+            <label class="${q.required ? "required" : ""}">${label}</label>
+            <select name="${name}" data-qname="${name}" ${required}>
+              <option value=""></option>
+              ${opts}
+            </select>
+            </div>
+          `;
+        }
+        if (type === "radio") {
+          const opts = (q.options || []).map(o => `
+            <label class="opt-row">
+              <input type="radio" name="${name}" value="${optLabel(o)}" data-qname="${name}" ${required} />
+              <span>${optLabel(o)}</span>
+              ${optInfo(o)}
+            </label>
+          `).join("");
+          return `
+            <div class="form-group" data-question-id="${name}" data-qtype="radio" ${q.required ? "data-required-group='1'" : ""}>
+              <label class="${q.required ? "required" : ""}">${label}</label>
+              <div>${opts}</div>
+            </div>
+          `;
+        }
+        if (type === "checkbox") {
+          const opts = (q.options || []).map(o => `
+            <label class="opt-row">
+              <input type="checkbox" name="${name}" value="${optLabel(o)}" data-qname="${name}" />
+              <span>${optLabel(o)}</span>
+              ${optInfo(o)}
+            </label>
+          `).join("");
+          return `
+            <div class="form-group" data-question-id="${name}" data-qtype="checkbox" ${q.required ? "data-required-group='1'" : ""}>
+              <label class="${q.required ? "required" : ""}">${label}</label>
+              <div>${opts}</div>
+            </div>
+          `;
+        }
+        if (type === "textarea") {
+          return `
+            <div class="form-group" data-question-id="${name}" data-qtype="textarea">
+            <label class="${q.required ? "required" : ""}">${label}</label>
+            <textarea name="${name}" data-qname="${name}" ${required}></textarea>
+            </div>
+          `;
+        }
+        // default: text
+        return `
+          <div class="form-group" data-question-id="${name}" data-qtype="text">
+          <label class="${q.required ? "required" : ""}">${label}</label>
+          <input type="text" name="${name}" data-qname="${name}" ${required} />
+          </div>
+        `;
+      }
+
+      function renderQuestionnaire(spec) {
+        const root = el("questionnaire");
+        root.innerHTML = "";
+        const title = document.createElement("h3");
+        title.textContent = spec?.title || "Questionnaire";
+        root.appendChild(title);
+        window.__questionnaireSpec = spec || {};
+        const qs = Array.isArray(spec?.questions) ? spec.questions : [];
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = qs.map(inputForQuestion).join("\n");
+        root.appendChild(card);
+
+        document.querySelectorAll('input[type="radio"][name="binary_success"]').forEach((r) => {
+          r.addEventListener("change", applySuccessConditional);
+        });
+        applySuccessConditional();
+      }
+
+      function gatherAnswers() {
+        const out = {};
+        const qs = Array.isArray(window.__questionnaireSpec?.questions) ? window.__questionnaireSpec.questions : [];
+        for (const q of qs) {
+          const id = q.id || q.name || q.key;
+          if (!id) continue;
+          const type = String(q.type || "text").toLowerCase();
+          if (type === "checkbox") {
+            const els = Array.from(document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(id)}"]`));
+            out[id] = els.filter(e => e.checked).map(e => e.value);
+          } else if (type === "radio") {
+            const checked = document.querySelector(`input[type="radio"][name="${CSS.escape(id)}"]:checked`);
+            out[id] = checked ? checked.value : "";
+          } else {
+            const el0 = document.querySelector(`[name="${CSS.escape(id)}"]`);
+            out[id] = el0 ? String(el0.value ?? "") : "";
+          }
+        }
+        return out;
+      }
+
+      function validateRequired() {
+        const nodes = document.querySelectorAll("[data-required='1']");
+        for (const n of nodes) {
+          const group = n.closest("[data-question-id]");
+          if (group && group.style.display === "none") continue;
+          if (!String(n.value ?? "").trim()) return false;
+        }
+        const groups = document.querySelectorAll("[data-required-group='1']");
+        for (const g of groups) {
+          if (g.style.display === "none") continue;
+          const qtype = (g.getAttribute("data-qtype") || "").toLowerCase();
+          if (qtype === "checkbox") {
+            if (!g.querySelector('input[type="checkbox"]:checked')) return false;
+          } else if (qtype === "radio") {
+            if (!g.querySelector('input[type="radio"]:checked')) return false;
+          }
+        }
+        return true;
+      }
+
+      const FAILURE_ONLY_QUESTIONS = ["failure_category", "failure_description", "severity"];
+
+      function applySuccessConditional() {
+        const selected = document.querySelector('input[type="radio"][name="binary_success"]:checked');
+        const isSuccess = selected && selected.value === "Success";
+        FAILURE_ONLY_QUESTIONS.forEach((id) => {
+          const group = document.querySelector(`[data-question-id="${CSS.escape(id)}"]`);
+          if (!group) return;
+          group.style.display = isSuccess ? "none" : "";
+        });
+      }
+
+      let currentSampleId = null; // rollout sample_id
+      let browseRelPath = null;   // selected h5 rel path (string)
+      let currentBrowseSample = null;
+      let lastStatus = null;
+      let questionnaireRenderedFor = null;
+      let videosRenderedFor = null;
+      let lastH5ListSig = "";
+      const expandedDirs = new Set([""]); // "" = root
+
+      async function loadH5List() {
+        const items = await jget("/api/h5/list");
+        window.__h5Items = Array.isArray(items) ? items : [];
+        renderH5List();
+      }
+
+      async function pollH5List() {
+        try {
+          const items = await jget("/api/h5/list");
+          const arr = Array.isArray(items) ? items : [];
+          // Lightweight signature: rel_path + annotated + mtime.
+          const sig = arr.map(it => `${it.rel_path}|${it.annotated ? 1 : 0}|${it.mtime}`).join("\n");
+          if (sig !== lastH5ListSig) {
+            lastH5ListSig = sig;
+            window.__h5Items = arr;
+            renderH5List();
+          }
+        } catch (e) {
+          // ignore transient errors
+        }
+      }
+
+      function renderH5List() {
+        const q = String(el("h5Search").value || "").toLowerCase();
+        const items = (window.__h5Items || []).filter(it => {
+          const rp = String(it.rel_path || "");
+          return !q || rp.toLowerCase().includes(q);
+        });
+        el("h5Count").textContent = `${items.length} file(s)`;
+
+        // Build a directory tree from rel_path strings.
+        function makeNode() { return { files: [], dirs: new Map() }; }
+        const root = makeNode();
+        for (const it of items) {
+          const rp = String(it.rel_path || "");
+          const parts = rp.split("/").filter(Boolean);
+          if (parts.length === 0) continue;
+          const fileName = parts[parts.length - 1];
+          const dirParts = parts.slice(0, -1);
+          let node = root;
+          let prefix = "";
+          for (const d of dirParts) {
+            prefix = prefix ? `${prefix}/${d}` : d;
+            if (!node.dirs.has(d)) node.dirs.set(d, makeNode());
+            node = node.dirs.get(d);
+          }
+          node.files.push({ ...it, _fileName: fileName });
+        }
+
+        // If searching, auto-expand all matching parent directories so results are visible.
+        if (q) {
+          for (const it of items) {
+            const rp = String(it.rel_path || "");
+            const parts = rp.split("/").filter(Boolean);
+            let prefix = "";
+            for (const p of parts.slice(0, -1)) {
+              prefix = prefix ? `${prefix}/${p}` : p;
+              expandedDirs.add(prefix);
+            }
+          }
+        }
+
+        function esc(s) {
+          return String(s ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+        }
+
+        const lines = [];
+        function renderDir(node, dirPath, depth) {
+          const dirEntries = Array.from(node.dirs.entries()).sort((a,b) => a[0].localeCompare(b[0]));
+          const fileEntries = node.files.slice().sort((a,b) => String(a._fileName).localeCompare(String(b._fileName)));
+
+          for (const [dirName, child] of dirEntries) {
+            const childPath = dirPath ? `${dirPath}/${dirName}` : dirName;
+            const isOpen = expandedDirs.has(childPath);
+            const indent = depth * 14;
+            lines.push(
+              `<div class="tree-row" data-kind="dir" data-dir="${esc(childPath)}" style="margin-left:${indent}px;">` +
+              `<span class="tree-arrow">${isOpen ? "▾" : "▸"}</span>` +
+              `<span class="tree-label">${esc(dirName)}/</span>` +
+              `</div>`
+            );
+            if (isOpen) renderDir(child, childPath, depth + 1);
+          }
+
+          for (const it of fileEntries) {
+            const rp = String(it.rel_path || "");
+            const active = (browseRelPath === rp) ? "active" : "";
+            const tick = it.annotated ? "✓ " : "";
+            const indent = depth * 14;
+            lines.push(
+              `<div class="tree-row ${active}" data-kind="file" data-rel="${esc(rp)}" style="margin-left:${indent}px;">` +
+              `<span class="tree-arrow"></span>` +
+              `<span class="tree-label">${tick}${esc(it._fileName)}</span>` +
+              `</div>`
+            );
+          }
+        }
+
+        renderDir(root, "", 0);
+        el("h5List").innerHTML = lines.join("");
+
+        el("h5List").querySelectorAll('[data-kind="dir"]').forEach(node => {
+          node.addEventListener("click", () => {
+            const dir = node.getAttribute("data-dir") || "";
+            if (expandedDirs.has(dir)) expandedDirs.delete(dir);
+            else expandedDirs.add(dir);
+            renderH5List();
+          });
+        });
+        el("h5List").querySelectorAll('[data-kind="file"]').forEach(node => {
+          node.addEventListener("click", async () => {
+            const rp = node.getAttribute("data-rel");
+            if (!rp) return;
+            await selectBrowseH5(rp);
+          });
+        });
+      }
+
+      function populateForm(existing) {
+        const ann = existing && typeof existing === "object" ? existing : {};
+        const skip = new Set(["annotated_at", "annotator", "source"]);
+        const qs = Array.isArray(window.__questionnaireSpec?.questions) ? window.__questionnaireSpec.questions : [];
+        for (const q of qs) {
+          const id = q.id || q.name || q.key;
+          if (!id || skip.has(id)) continue;
+          if (!(id in ann)) continue;
+          const type = String(q.type || "text").toLowerCase();
+          const value = ann[id];
+          if (type === "checkbox") {
+            const values = Array.isArray(value) ? value.map(String) : [String(value)];
+            const els = Array.from(document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(id)}"]`));
+            for (const elc of els) elc.checked = values.includes(String(elc.value));
+          } else if (type === "radio") {
+            const els = Array.from(document.querySelectorAll(`input[type="radio"][name="${CSS.escape(id)}"]`));
+            for (const elr of els) elr.checked = String(elr.value) === String(value);
+          } else {
+            const el0 = document.querySelector(`[name="${CSS.escape(id)}"]`);
+            if (el0) el0.value = (value == null) ? "" : String(value);
+          }
+        }
+        applySuccessConditional();
+      }
+
+      async function selectBrowseH5(relPath) {
+        browseRelPath = relPath;
+        currentBrowseSample = null;
+        questionnaireRenderedFor = null;
+        videosRenderedFor = null;
+        renderH5List();
+        await refresh();
+      }
+
+      function clearBrowse() {
+        browseRelPath = null;
+        currentBrowseSample = null;
+        el("saveMsg").textContent = "";
+        questionnaireRenderedFor = null;
+        videosRenderedFor = null;
+        renderH5List();
+      }
+
+      async function refresh() {
+        const st = await jget("/api/task/state");
+        const browseOnly = Boolean(
+          st?.browse_only ??
+            (typeof ANNOTATOR_BROWSE_ONLY !== "undefined" && ANNOTATOR_BROWSE_ONLY),
+        );
+        el("statusLine").textContent = taskStatusLabel(st?.status, browseOnly);
+
+        // Server started with --browse-only: skip instruction / rollout cards entirely.
+        if (typeof ANNOTATOR_BROWSE_ONLY !== "undefined" && ANNOTATOR_BROWSE_ONLY) {
+          if (browseRelPath) {
+            showOnly("annotateCard");
+
+            if (!currentBrowseSample || currentBrowseSample.rel_path !== browseRelPath) {
+              const sample = await jget(`/api/h5/sample?path=${encodeURIComponent(browseRelPath)}`);
+              currentBrowseSample = sample;
+              questionnaireRenderedFor = null;
+              videosRenderedFor = null;
+            }
+
+            if (videosRenderedFor !== browseRelPath) {
+              renderVideos(currentBrowseSample?.video_urls || {});
+              videosRenderedFor = browseRelPath;
+            }
+            if (questionnaireRenderedFor !== browseRelPath) {
+              const q = await jget("/api/questionnaire");
+              renderQuestionnaire(q);
+              populateForm(currentBrowseSample?.existing_annotation || {});
+              questionnaireRenderedFor = browseRelPath;
+            }
+            syncHeaderPanel(st);
+            return;
+          }
+
+          showOnly("annotateCard");
+          if (videosRenderedFor !== "__browse_landing__") {
+            renderVideos({});
+            videosRenderedFor = "__browse_landing__";
+          }
+          if (questionnaireRenderedFor !== "__browse_landing__") {
+            const q = await jget("/api/questionnaire");
+            renderQuestionnaire(q);
+            populateForm({});
+            questionnaireRenderedFor = "__browse_landing__";
+          }
+          syncHeaderPanel(st);
+          return;
+        }
+
+        // Browse mode overrides the main pane regardless of rollout status.
+        if (browseRelPath) {
+          showOnly("annotateCard");
+
+          if (!currentBrowseSample || currentBrowseSample.rel_path !== browseRelPath) {
+            const sample = await jget(`/api/h5/sample?path=${encodeURIComponent(browseRelPath)}`);
+            currentBrowseSample = sample;
+            questionnaireRenderedFor = null;
+            videosRenderedFor = null;
+          }
+
+          if (videosRenderedFor !== browseRelPath) {
+            renderVideos(currentBrowseSample?.video_urls || {});
+            videosRenderedFor = browseRelPath;
+          }
+          if (questionnaireRenderedFor !== browseRelPath) {
+            const q = await jget("/api/questionnaire");
+            renderQuestionnaire(q);
+            populateForm(currentBrowseSample?.existing_annotation || {});
+            questionnaireRenderedFor = browseRelPath;
+          }
+          syncHeaderPanel(st);
+          return;
+        }
+
+        const cs = st.current_sample || {};
+        const nextSampleId = cs.sample_id || null;
+
+        // Only switch cards when status actually changes to avoid UI flicker.
+        if (st.status !== lastStatus) {
+          if (st.status === "idle" || st.status === "pending") {
+            showOnly("instructionCard");
+            const last = String(st.last_instruction || "").trim();
+            if (last) {
+              el("instruction").value = last;
+              el("repeatInstructionBtn").style.display = "";
+            } else {
+              el("repeatInstructionBtn").style.display = "none";
+            }
+          } else if (st.status === "running") {
+            showOnly("runningCard");
+          } else if (st.status === "annotating") {
+            showOnly("annotateCard");
+          }
+          lastStatus = st.status;
+        }
+
+        if (st.status === "annotating") {
+          currentSampleId = nextSampleId;
+
+          // Render videos only when the sample changes.
+          if (nextSampleId && videosRenderedFor !== nextSampleId) {
+            renderVideos(cs.video_urls || {});
+            videosRenderedFor = nextSampleId;
+          }
+
+          // Render questionnaire only once per sample; otherwise it rebuilds DOM and steals focus.
+          if (nextSampleId && questionnaireRenderedFor !== nextSampleId) {
+            const q = await jget("/api/questionnaire");
+            renderQuestionnaire(q);
+            questionnaireRenderedFor = nextSampleId;
+          }
+        } else {
+          currentSampleId = null;
+          questionnaireRenderedFor = null;
+          videosRenderedFor = null;
+          renderMetadata({});
+        }
+        syncHeaderPanel(st);
+      }
+
+      async function submitInstruction(v) {
+        if (!v) return;
+        el("submitInstructionBtn").disabled = true;
+        el("repeatInstructionBtn").disabled = true;
+        try {
+          await jpost("/api/task/submit", { instruction: v });
+          el("instruction").value = "";
+        } catch (e) {
+          alert(String(e));
+        } finally {
+          el("submitInstructionBtn").disabled = false;
+          el("repeatInstructionBtn").disabled = false;
+          await refresh();
+        }
+      }
+
+      el("submitInstructionBtn").addEventListener("click", () =>
+        submitInstruction(el("instruction").value.trim())
+      );
+      el("repeatInstructionBtn").addEventListener("click", () =>
+        submitInstruction(el("instruction").value.trim())
+      );
+
+      el("saveBtn").addEventListener("click", async () => {
+        if (!currentSampleId && !browseRelPath) return;
+        if (!validateRequired()) {
+          el("saveMsg").textContent = "Please fill required fields.";
+          return;
+        }
+        el("saveMsg").textContent = "";
+        el("saveBtn").disabled = true;
+        try {
+          const answers = gatherAnswers();
+          if (browseRelPath) {
+            await jpost(`/api/h5/annotations?path=${encodeURIComponent(browseRelPath)}`, answers);
+          } else {
+            await jpost("/api/annotations", { sample_id: currentSampleId, ...answers });
+          }
+          el("saveMsg").textContent = "Saved.";
+          await pollH5List();
+        } catch (e) {
+          el("saveMsg").textContent = "Error saving.";
+          alert(String(e));
+        } finally {
+          el("saveBtn").disabled = false;
+        }
+      });
+
+      el("h5Search").addEventListener("input", () => renderH5List());
+      el("backToTaskBtn").addEventListener("click", async () => {
+        try {
+          await jpost("/api/task/done", {});
+        } catch (e) {
+          /* already idle or network glitch; still return to instruction UI */
+        }
+        clearBrowse();
+        showOnly("instructionCard");
+        await refresh();
+      });
+
+      if (typeof ANNOTATOR_BROWSE_ONLY !== "undefined" && ANNOTATOR_BROWSE_ONLY) {
+        el("backToTaskBtn").style.display = "none";
+      }
+
+      loadH5List().catch(() => {});
+      if (typeof ANNOTATOR_BROWSE_ONLY === "undefined" || !ANNOTATOR_BROWSE_ONLY) {
+        setInterval(() => refresh().catch(() => {}), 800);
+        setInterval(() => pollH5List().catch(() => {}), 1500);
+        refresh().catch(() => {});
+      }
+    </script>
+  </body>
+</html>
+

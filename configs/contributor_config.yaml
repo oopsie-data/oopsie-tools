@@ -1,0 +1,5 @@
+# Lab id
+lab_id: your_lab_id
+
+# Huggingface 
+huggingface_token: your_huggingface_token
