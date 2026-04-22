@@ -5,7 +5,7 @@ Tools for collecting, annotating, inspecting, and converting robotic manipulatio
 This repository currently provides around:
 
 - HDF5 episode recording (`EpisodeRecorder`)
-- Web + CLI annotation workflows
+- Web annotation workflows
 - In-the-loop annotation during policy rollout
 
 ---
