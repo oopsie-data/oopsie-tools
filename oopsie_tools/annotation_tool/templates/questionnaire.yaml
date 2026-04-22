@@ -1,0 +1,48 @@
+title: "Robotic Failure Annotation"
+questions:
+  - id: binary_success
+    type: radio
+    label: "Did the robot succeed?"
+    required: true
+    options:
+      - "Success"
+      - "Failure"
+
+  - id: failure_category
+    type: checkbox
+    label: "Failure categories (select all that apply)"
+    required: true
+    options:
+      - name: "Reaching failure (pre contact)"
+        long_form: "Failure to reach the target object or location, resulting in no contact being made. If a grasp just barely misses the object, please count this as a grasp failure rather than a reaching failure."
+      - name: "Grasp failure (at contact)"
+        long_form: "Failure to grasp the target object properly. Includes slipping, dropping, or incorrect grasping."
+      - name: "Manipulation failure (post contact)"
+        long_form: "Failure to manipulate the object after successful grasp. An example would be successfully grasping a door handle but failing to open the door."
+      - name: "Sequencing or semantic failure"
+        long_form: "Error in planning or sequencing of actions. This includes executing a related but wrong action, such as pick-and-place of the wrong object, or executing a pick motion if a push motion was specified."
+      - name: "Collision failure"
+        long_form: "Failure due to collision with an obstacle or environment. This can co-occur with other failure types, please select all that apply."
+      - name: "Hardware/mechanical issue"
+        long_form: "Failure due to hardware or mechanical issues."
+      - name: "Task not attempted"
+        long_form: "Task was not attempted due to some reason. This should be used in case the robot makes no discernible attempt at a task, e.g. by stalling."
+
+  - id: failure_description
+    type: textarea
+    label: "Describe what went wrong"
+    required: true
+
+  - id: severity
+    type: radio
+    label: "How severe is this failure?"
+    required: false
+    options:
+      - "Low severity - no damage, can be reset and reattempted"
+      - "Medium severity - some damage or risk of damage or significant reset required, but can be reattempted"
+      - "Catastrophic - significant damage or risk of damage, cannot be reattempted without repair"
+
+  - id: additional_notes
+    type: text
+    label: "Additional notes (optional)"
+    required: false

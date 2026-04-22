@@ -1,0 +1,73 @@
+# Robot profile for ACT++ (ALOHA bimanual setup).
+
+# ===============================
+# ===== Robot Setup Related =====
+# ===============================
+
+policy_name: act_plus_plus
+robot_name: aloha
+gripper_name: aloha_gripper
+is_biarm: true
+uses_mobile_base: false
+control_freq: 50
+camera_names:
+  - top
+  - left_wrist
+  - right_wrist
+
+
+# ===============================
+# ===== Observation Related =====
+# ===============================
+
+# Observation keys. Options: "joint_position", "cartesian_position", "gripper_position"
+robot_state_keys:
+  - joint_position
+  - gripper_position
+
+# Required for knowing what each index in the robot_state["joint_position"] corresponds to.
+# 7 joints per arm (follower_left, follower_right)
+robot_state_joint_names:
+  - waist_left
+  - shoulder_left
+  - elbow_left
+  - forearm_roll_left
+  - wrist_angle_left
+  - wrist_rotate_left
+  - gripper_left
+  - waist_right
+  - shoulder_right
+  - elbow_right
+  - forearm_roll_right
+  - wrist_angle_right
+  - wrist_rotate_right
+  - gripper_right
+
+
+# ==========================
+# ===== Action Related =====
+# ==========================
+
+# Action space.
+# Options: "joint_velocity", "joint_position", "cartesian_position", "cartesian_velocity"
+# Gripper options: "gripper_position", "gripper_velocity", "gripper_binary"
+action_space:
+  - "joint_position"
+  - "gripper_position"
+
+# Joint names corresponding to the arm action dimensions
+action_joint_names:
+  - waist_left
+  - shoulder_left
+  - elbow_left
+  - forearm_roll_left
+  - wrist_angle_left
+  - wrist_rotate_left
+  - gripper_left
+  - waist_right
+  - shoulder_right
+  - elbow_right
+  - forearm_roll_right
+  - wrist_angle_right
+  - wrist_rotate_right
+  - gripper_right
