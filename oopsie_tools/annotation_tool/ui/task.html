@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Setup</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 40px;
+            width: 620px;
+            max-width: 92vw;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        h1 { font-size: 1.4rem; }
+        .header-links a {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .header-links a:hover { text-decoration: underline; }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        .s-idle       { background: #1e3a5f; color: #60a5fa; }
+        .s-pending,
+        .s-running    { background: #713f12; color: #fbbf24; }
+        .s-annotating { background: #14532d; color: #4ade80; }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 90px;
+            line-height: 1.5;
+        }
+        textarea:focus { outline: none; border-color: #60a5fa; }
+        .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+        button {
+            padding: 11px 22px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-start  { background: #4ade80; color: #000; font-weight: 600; }
+        .btn-start:hover { background: #22c55e; }
+        .btn-repeat { background: transparent; color: #60a5fa; border: 1px solid #60a5fa; }
+        .btn-repeat:hover { background: #1e3a5f; }
+        .spinner-wrap { text-align: center; padding: 24px 0; }
+        .spinner {
+            width: 44px; height: 44px;
+            border: 4px solid #333;
+            border-top-color: #4ade80;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 18px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner-wrap .label { color: #94a3b8; margin-bottom: 6px; font-size: 0.9rem; }
+        .spinner-wrap .task-text {
+            color: #eee;
+            font-style: italic;
+            font-size: 1rem;
+            max-width: 480px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        .hint { color: #555; font-size: 0.78rem; margin-top: 10px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; }
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 0.95rem;
+        }
+        .camera-row { display: flex; gap: 8px; margin-bottom: 6px; }
+        .camera-row input { flex: 1; padding: 8px; border: 1px solid #333; border-radius: 4px; background: #1a1a2e; color: #fff; font-size: 0.9rem; }
+        .camera-row button { padding: 8px 12px; border: none; border-radius: 4px; background: #444; color: #fff; cursor: pointer; }
+        .btn-add-cam { background: transparent; color: #60a5fa; border: 1px solid #60a5fa; border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 0.85rem; }
+        .btn-add-cam:hover { background: #1e3a5f; }
+        .wizard-progress { color: #94a3b8; font-size: 0.88rem; margin-bottom: 16px; }
+        .session-step { display: none; }
+        .session-step.active { display: block; }
+        .sess-preset-select {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+        .sess-preset-select:focus { outline: none; border-color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="card-header">
+            <h1>Task Setup</h1>
+            <div class="header-links">
+                <a href="/">Annotation Tool</a>
+            </div>
+        </div>
+
+        <!-- Session setup (shown once at startup) — 3-step wizard -->
+        <div id="session-panel">
+            <p id="bulk-session-hint" style="color:#60a5fa; margin-bottom:10px; font-size:0.88rem; display:none;">
+                This folder already contains saved episodes. After you finish setup, you will go to the <strong>annotation</strong> page (no live rollout step).
+            </p>
+            <p style="color:#94a3b8; margin-bottom:12px; font-size:0.88rem;">
+                Configure this recording session. To start a new session, restart the tool.
+            </p>
+            <div class="wizard-progress">Step <span id="wizard-step-num">1</span> of 3</div>
+
+            <div id="session-step-1" class="session-step active">
+                <div class="form-group">
+                    <label for="sess-policy-select">Policy ID *</label>
+                    <select id="sess-policy-select" class="sess-preset-select" aria-label="Policy ID">
+                        <option value="">Select policy…</option>
+                    </select>
+                    <input type="text" id="sess-policy-id" style="display:none;margin-top:8px"
+                           placeholder="Enter custom policy ID…">
+                </div>
+                <div class="form-group">
+                    <label for="sess-annotator">Annotator / operator name *</label>
+                    <input type="text" id="sess-annotator" placeholder="e.g. Alice">
+                </div>
+                <div class="form-group">
+                    <label for="sess-lab-id">Lab ID</label>
+                    <input type="text" id="sess-lab-id" placeholder="e.g. tri-lab-01">
+                </div>
+                <div class="btn-row" style="margin-top:20px">
+                    <button type="button" class="btn-start" id="btn-wizard-next-1">Next &rarr;</button>
+                </div>
+            </div>
+
+            <div id="session-step-2" class="session-step">
+                <div class="form-group">
+                    <label for="sess-robot-id">Robot ID *</label>
+                    <select id="sess-robot-preset" class="sess-preset-select" aria-label="Robot preset">
+                        <option value="">Quick pick robot…</option>
+                    </select>
+                    <input type="text" id="sess-robot-id" list="sess-datalist-robot-id"
+                           placeholder="Select above or type your own…">
+                </div>
+                <div class="form-group">
+                    <label for="sess-control-freq">Control frequency *</label>
+                    <input type="text" id="sess-control-freq" placeholder="e.g. 15">
+                </div>
+                <div class="btn-row" style="margin-top:20px">
+                    <button type="button" class="btn-repeat" id="btn-wizard-back-2">&larr; Back</button>
+                    <button type="button" class="btn-start" id="btn-wizard-next-2">Next &rarr;</button>
+                </div>
+            </div>
+
+            <div id="session-step-3" class="session-step">
+                <div class="form-group">
+                    <label>Cameras *</label>
+                    <div id="cameras-list"></div>
+                    <button type="button" class="btn-add-cam" onclick="addCamera()">+ Add Camera</button>
+                </div>
+                <div class="btn-row" style="margin-top:20px">
+                    <button type="button" class="btn-repeat" id="btn-wizard-back-3">&larr; Back</button>
+                    <button type="button" class="btn-start" id="btn-session-start">Start session &rarr;</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task panels (hidden until session configured) -->
+        <div id="task-panels" style="display:none">
+            <div id="session-info" style="font-size:0.8rem;color:#94a3b8;margin-bottom:16px;"></div>
+            <div id="status-badge" class="status-badge s-idle">Idle</div>
+
+            <!-- Idle: instruction form -->
+            <div id="form-panel">
+                <label for="instruction">Task Instruction</label>
+                <textarea id="instruction" placeholder="e.g. Pick up the cup and place it on the tray"></textarea>
+                <div class="btn-row">
+                    <button class="btn-start" id="btn-start">Start Rollout</button>
+                </div>
+                <div class="hint">Ctrl+Enter to start</div>
+            </div>
+
+            <!-- Running / pending: spinner -->
+            <div id="spinner-panel" class="spinner-wrap" style="display:none">
+                <div class="spinner"></div>
+                <div class="label">Rollout in progress&hellip;</div>
+                <div class="task-text" id="running-task"></div>
+            </div>
+
+            <!-- Annotating: redirect in progress -->
+            <div id="annotating-panel" class="spinner-wrap" style="display:none">
+                <div class="spinner"></div>
+                <div class="label">Redirecting to annotation&hellip;</div>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="sess-datalist-robot-id"></datalist>
+
+    <script>
+        let lastInstruction = '';
+
+        const SESS_POLICY_OTHER = '__custom_policy__';
+
+        function applySessionPolicySelectChange() {
+            const sel = document.getElementById('sess-policy-select');
+            const inp = document.getElementById('sess-policy-id');
+            if (!sel || !inp) return;
+            if (sel.value === SESS_POLICY_OTHER) {
+                inp.style.display = '';
+                inp.value = '';
+                inp.focus();
+            } else if (sel.value) {
+                inp.style.display = 'none';
+                inp.value = sel.value;
+            } else {
+                inp.style.display = 'none';
+                inp.value = '';
+            }
+        }
+
+        function setSessionPolicyUIFromValue(policyId) {
+            const sel = document.getElementById('sess-policy-select');
+            const inp = document.getElementById('sess-policy-id');
+            const v = String(policyId || '').trim();
+            if (!sel || !inp) return;
+            let idx = -1;
+            for (let i = 0; i < sel.options.length; i++) {
+                const o = sel.options[i];
+                if (o.value && o.value !== SESS_POLICY_OTHER && o.value === v) {
+                    idx = i;
+                    break;
+                }
+            }
+            if (idx >= 0) {
+                sel.selectedIndex = idx;
+                inp.style.display = 'none';
+                inp.value = v;
+            } else if (v) {
+                sel.value = SESS_POLICY_OTHER;
+                inp.style.display = '';
+                inp.value = v;
+            } else {
+                sel.selectedIndex = 0;
+                inp.style.display = 'none';
+                inp.value = '';
+            }
+        }
+
+        async function loadTaskPageOptions() {
+            const optionsRes = await fetch('/api/options').then(r => r.json()).catch(() => ({}));
+            const populateDatalist = (listId, options) => {
+                const list = document.getElementById(listId);
+                if (!list || !Array.isArray(options)) return;
+                list.innerHTML = '';
+                options.forEach((opt) => {
+                    const el = document.createElement('option');
+                    el.value = opt;
+                    list.appendChild(el);
+                });
+            };
+            const selPolicy = document.getElementById('sess-policy-select');
+            if (selPolicy && Array.isArray(optionsRes.policies)) {
+                while (selPolicy.options.length > 1) selPolicy.remove(1);
+                optionsRes.policies.forEach((opt) => {
+                    const o = document.createElement('option');
+                    o.value = opt;
+                    o.textContent = opt;
+                    selPolicy.appendChild(o);
+                });
+                const other = document.createElement('option');
+                other.value = SESS_POLICY_OTHER;
+                other.textContent = 'Other (custom policy)…';
+                selPolicy.appendChild(other);
+                selPolicy.addEventListener('change', applySessionPolicySelectChange);
+            }
+            const populatePresetSelect = (selectId, options) => {
+                const sel = document.getElementById(selectId);
+                if (!sel || !Array.isArray(options)) return;
+                while (sel.options.length > 1) sel.remove(1);
+                options.forEach((opt) => {
+                    const o = document.createElement('option');
+                    o.value = opt;
+                    o.textContent = opt;
+                    sel.appendChild(o);
+                });
+            };
+            const wirePreset = (selectId, inputId) => {
+                const sel = document.getElementById(selectId);
+                const inp = document.getElementById(inputId);
+                if (!sel || !inp) return;
+                sel.addEventListener('change', () => {
+                    if (sel.value) {
+                        inp.value = sel.value;
+                        sel.selectedIndex = 0;
+                    }
+                });
+            };
+            populateDatalist('sess-datalist-robot-id', optionsRes.robot_embodiments);
+            populatePresetSelect('sess-robot-preset', optionsRes.robot_embodiments);
+            wirePreset('sess-robot-preset', 'sess-robot-id');
+        }
+        loadTaskPageOptions();
+
+        function setWizardStep(n) {
+            document.querySelectorAll('.session-step').forEach(el => el.classList.remove('active'));
+            const stepEl = document.getElementById('session-step-' + n);
+            if (stepEl) stepEl.classList.add('active');
+            document.getElementById('wizard-step-num').textContent = String(n);
+        }
+
+        function addCamera(name) {
+            const list = document.getElementById('cameras-list');
+            const div = document.createElement('div');
+            div.className = 'camera-row';
+            div.innerHTML = `<input type="text" class="camera-input" value="${name || ''}" placeholder="e.g. left"><button type="button" onclick="this.parentElement.remove()">&times;</button>`;
+            list.appendChild(div);
+        }
+
+        document.getElementById('btn-wizard-next-1').addEventListener('click', () => {
+            const policyId = document.getElementById('sess-policy-id').value.trim();
+            const annotator = document.getElementById('sess-annotator').value.trim();
+            if (!policyId || !annotator) {
+                alert('Please fill in Policy ID and Annotator / operator name.');
+                return;
+            }
+            setWizardStep(2);
+        });
+
+        document.getElementById('btn-wizard-back-2').addEventListener('click', () => setWizardStep(1));
+
+        document.getElementById('btn-wizard-next-2').addEventListener('click', () => {
+            const robotId = document.getElementById('sess-robot-id').value.trim();
+            const controlFreq = document.getElementById('sess-control-freq').value.trim();
+            if (!robotId || !controlFreq) {
+                alert('Please fill in Robot ID and Control frequency.');
+                return;
+            }
+            setWizardStep(3);
+            if (!document.querySelector('.camera-input')) {
+                ['left', 'right', 'wrist'].forEach(n => addCamera(n));
+            }
+        });
+
+        document.getElementById('btn-wizard-back-3').addEventListener('click', () => setWizardStep(2));
+
+        document.getElementById('btn-session-start').addEventListener('click', async () => {
+            const policyId = document.getElementById('sess-policy-id').value.trim();
+            const annotator = document.getElementById('sess-annotator').value.trim();
+            const labId = document.getElementById('sess-lab-id').value.trim();
+            const robotId = document.getElementById('sess-robot-id').value.trim();
+            const controlFreq = document.getElementById('sess-control-freq').value.trim();
+            const inputs = document.querySelectorAll('.camera-input');
+            const cameraNames = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+            if (!policyId || !annotator || !robotId || !controlFreq || !cameraNames.length) {
+                alert('Please complete all steps: Policy, Operator, Lab (optional), Robot ID, Control frequency, and at least one camera.');
+                return;
+            }
+            const resp = await fetch('/api/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    policy_id: policyId,
+                    annotator_name: annotator,
+                    lab_id: labId,
+                    robot_id: robotId,
+                    control_freq: controlFreq,
+                    camera_names: cameraNames,
+                }),
+            });
+            if (resp.ok) {
+                localStorage.setItem('annotator_name', annotator);
+                pollAll();
+            } else {
+                const err = await resp.json();
+                alert(err.error || 'Failed to create session');
+            }
+        });
+
+        async function pollAll() {
+            try {
+                const session = await fetch('/api/session').then(r => r.json());
+                if (!session.configured) {
+                    document.getElementById('session-panel').style.display = '';
+                    document.getElementById('task-panels').style.display = 'none';
+                    const bulkHint = document.getElementById('bulk-session-hint');
+                    if (bulkHint) bulkHint.style.display = session.bulk_annotation_mode ? 'block' : 'none';
+                    // Pre-fill from prefilled_data
+                    const pd = session.prefilled_data || {};
+                    if (pd.policy_id && !document.getElementById('sess-policy-id').value.trim())
+                        setSessionPolicyUIFromValue(pd.policy_id);
+                    if (pd.lab_id && !document.getElementById('sess-lab-id').value)
+                        document.getElementById('sess-lab-id').value = pd.lab_id;
+                    if (pd.robot_id && !document.getElementById('sess-robot-id').value)
+                        document.getElementById('sess-robot-id').value = pd.robot_id;
+                    if (pd.control_freq && !document.getElementById('sess-control-freq').value)
+                        document.getElementById('sess-control-freq').value = pd.control_freq;
+                    if (pd.camera_names && pd.camera_names.length && !document.querySelector('.camera-input'))
+                        pd.camera_names.forEach(n => addCamera(n));
+                    return;
+                }
+                // Bulk annotation: episode folder already on disk — skip rollout orchestration; go annotate.
+                if (session.bulk_annotation_mode) {
+                    window.location.replace('/');
+                    return;
+                }
+                // Session configured (live rollout / task loop)
+                document.getElementById('session-panel').style.display = 'none';
+                document.getElementById('task-panels').style.display = '';
+                document.getElementById('session-info').textContent =
+                    `Session: ${session.annotator_name} · ${session.policy_id} · ${session.lab_id || '-'} · robot ${session.robot_id || '-'} · control ${session.control_freq || '-'} · cams: ${session.camera_names.join(', ')}`;
+
+                const state = await fetch('/api/task/state').then(r => r.json());
+                applyState(state);
+            } catch (_) {}
+        }
+
+        function applyState(state) {
+            const status = state.status;
+            lastInstruction = state.last_instruction || '';
+
+            const badge = document.getElementById('status-badge');
+            const labels = { idle: 'Idle', pending: 'Pending', running: 'Running', annotating: 'Annotating' };
+            badge.textContent = labels[status] || status;
+            badge.className = 'status-badge s-' + status;
+
+            document.getElementById('form-panel').style.display      = status === 'idle' ? '' : 'none';
+            document.getElementById('spinner-panel').style.display   = (status === 'pending' || status === 'running') ? '' : 'none';
+            document.getElementById('annotating-panel').style.display = status === 'annotating' ? '' : 'none';
+
+            if (status === 'idle') {
+                const textarea = document.getElementById('instruction');
+                if (lastInstruction && !textarea.value.trim()) {
+                    textarea.value = lastInstruction;
+                    textarea.select();
+                }
+            }
+
+            if (status === 'pending' || status === 'running') {
+                document.getElementById('running-task').textContent =
+                    state.last_instruction || state.pending_instruction || '';
+            }
+
+            if (status === 'annotating' && state.current_sample_idx !== null) {
+                window.location.href = '/?sample=' + state.current_sample_idx;
+            }
+        }
+
+        document.getElementById('btn-start').addEventListener('click', async () => {
+            const val = document.getElementById('instruction').value.trim();
+            if (!val) { document.getElementById('instruction').focus(); return; }
+            await fetch('/api/task/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instruction: val }),
+            });
+            document.getElementById('instruction').value = '';
+        });
+
+        document.getElementById('instruction').addEventListener('keydown', e => {
+            if (e.ctrlKey && e.key === 'Enter') document.getElementById('btn-start').click();
+        });
+
+        setInterval(pollAll, 500);
+        pollAll();
+    </script>
+</body>
+</html>
+

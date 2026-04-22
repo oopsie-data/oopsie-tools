@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "oopsie-tools"
+version = "0.2.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "flask>=3.0.0",
+    "h5py>=3.7.0",
+    "huggingface-hub>=0.36.2",
+    "imageio>=2.35.1",
+    "numpy>=1.20.0",
+    "opencv-python>=4.11.0.86",
+    "pytest>=8.3.5",
+    "pyyaml>=6.0.0",
+    "scipy>=1.10.1",
+]
+
+[project.optional-dependencies]
+# For building TFDS datasets (tfds build command)
+# Used by dataset conversion scripts
+# Install with: uv sync --extra tfds
+tfds = [
+    "apache-beam[tfrecord]>=2.50.0",
+    "mlcroissant>=1.0.0",
+    "tensorflow>=2.13.0",
+    "tensorflow-io-gcs-filesystem<=0.34.0; python_version < '3.9'",  # 0.35+ dropped cp38 linux x86_64 wheels without declaring requires-python
+    "tensorflow-datasets>=4.9.0",
+    "moviepy>=1.0.3,<2.0",
+]
+
+# For droid robot inference
+# Install with: uv sync --extra droid
+# Note: openpi_client and droid.robot_env must be installed separately (not on PyPI)
+droid = [
+    "moviepy>=1.0.3,<2.0",
+    "pandas>=2.0.0",
+    "pillow>=10.0.0",
+    "tqdm>=4.66.0",
+    "tyro>=0.9.0",
+]
+
+[tool.uv]
+# These extras have conflicting dependencies and must be resolved separately:
+conflicts = [
+    [
+        { extra = "tfds" },
+        { extra = "droid" },
+    ],
+]
