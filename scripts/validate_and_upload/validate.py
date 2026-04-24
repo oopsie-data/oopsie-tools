@@ -2,8 +2,8 @@
 Validate HDF5 episodes against the ``robotic_failure_upload_data_format_v1`` schema.
 
 Usage:
-    python validate.py --output_dir /path/to/formatted_data               # all *.h5 in folder
-    python validate.py --output_dir /path/to/formatted_data --episode_id 000001  # single episode
+    python validate.py --samples_dir /path/to/formatted_data               # all *.h5 in folder
+    python validate.py --samples_dir /path/to/formatted_data --episode_id 000001  # single episode
 """
 
 import json
@@ -225,7 +225,7 @@ def gap_analysis(source_h5_path: str) -> None:
         )
 
     print("\nTo convert, run:")
-    print(f"  python convert.py --source {source_h5_path} --output_dir <output_dir>\n")
+    print(f"  python convert.py --source {source_h5_path} --samples_dir <output_dir>\n")
 
 
 MAX_IMAGE_SIZE = 1280
@@ -1032,8 +1032,8 @@ def main():
     Main function to run validation tests from command line.
 
     Usage:
-        python validate.py --output_dir /path/to/dataset --episode_id 000001
-        python validate.py --output_dir /path/to/dataset   # validates all *.h5 in folder
+        python validate.py --samples_dir /path/to/dataset --episode_id 000001
+        python validate.py --samples_dir /path/to/dataset   # validates all *.h5 in folder
     """
     parser = argparse.ArgumentParser(
         description="Validate robotic failure dataset episodes",
@@ -1041,7 +1041,7 @@ def main():
     )
 
     parser.add_argument(
-        "--output_dir",
+        "--samples_dir",
         "-o",
         type=str,
         required=True,
@@ -1054,7 +1054,7 @@ def main():
         type=str,
         required=False,
         default=None,
-        help="Episode ID to validate (e.g., 000001); if omitted, all *.h5 files in output_dir are validated",
+        help="Episode ID to validate (e.g., 000001); if omitted, all *.h5 files in samples_dir are validated",
     )
 
     parser.add_argument(
@@ -1073,11 +1073,11 @@ def main():
         return 0
 
     if args.episode_id is None:
-        return validate_session_dir(args.output_dir)
+        return validate_session_dir(args.samples_dir)
 
     try:
-        print(f"\nValidating episode {args.episode_id} from {args.output_dir}...\n")
-        validate_policy_data(args.output_dir, args.episode_id)
+        print(f"\nValidating episode {args.episode_id} from {args.samples_dir}...\n")
+        validate_policy_data(args.samples_dir, args.episode_id)
         print(f"\n✓ All validation tests passed for episode {args.episode_id}\n")
         return 0
 
