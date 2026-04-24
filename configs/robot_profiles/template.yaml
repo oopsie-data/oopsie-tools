@@ -1,0 +1,89 @@
+# Any config related to the robot setup, observation, action will be stored here.
+
+
+# ===============================
+# ===== Robot Setup Related =====
+# ===============================
+
+policy_name: # str
+robot_name: # str
+gripper_name: # str
+is_biarm: # bool
+uses_mobile_base: # bool
+control_freq: # int
+camera_names: # list of str
+  - # str
+
+
+# ===============================
+# ===== Observation Related =====
+# ===============================
+
+# Observation keys. Options: "joint_position", "cartesian_position", "gripper_position", "base_position"
+robot_state_keys: # list of str
+  - # str
+
+# Required for knowing what each index in the robot_state["joint_position"] corresponds to
+robot_state_joint_names: # list of str
+  - # str
+
+# If cartesian_position is in the robot_state_keys, specify the orientation representation. Options:
+# 1. "euler_{format}" (where format is "xyz", "xyx" ... (shape (3,))
+# 2. "quat" (quaternion should be scalar last, shape (4,))
+# 3. "matrix" (rotation matrix, shape (3, 3))
+# 4. "rot6d" (first two columns of the rotation matrix, flattened, shape (6,). This is used by openpi)
+# 5. "rotvec" (axis-angle, shape (3,))
+robot_state_orientation_representation: # str
+
+
+# ==========================
+# ===== Action Related =====
+# ==========================
+
+# Action space. 
+# Options: "joint_velocity", "joint_position", "cartesian_position", "cartesian_velocity"
+# Gripper options: "gripper_position", "gripper_velocity", "gripper_binary"
+# Base options: "base_velocity", "base_position"
+action_space: # list of str
+  - # str
+
+# If action space is joint velocity / joint position
+action_joint_names: # list of str
+  - # str
+
+# If action space is eef cartesian position, specify the orientation representation. Options:
+# 1. "euler_{format}" (where format is "xyz", "xyx" ... (shape (3,))
+# 2. "quat" (quaternion should be scalar last, shape (4,))
+# 3. "matrix" (rotation matrix, shape (3, 3))
+# 4. "rot6d" (first two columns of the rotation matrix, flattened, shape (6,). This is used by openpi)
+# 5. "rotvec" (axis-angle, shape (3,))
+orientation_representation: # str
+
+
+# ==========================
+# ===== Optional Keys =====
+# ==========================
+
+# Options: "OSC", "joint_position", "joint_velocity"
+controller: # str
+gains:
+  joint_position:
+    kp: # list of float
+    kd: # list of float
+
+  joint_velocity:
+    kv: # list of float
+
+  osc:
+    kp_pos: # list of float
+    kd_pos: # list of float
+    kp_ori: # list of float
+    kd_ori: # list of float
+
+intrinsic calibration matrix: 
+  <str>: # camera name str
+    - # 3 x list of three floats (camera intrinsics for left camera)
+
+extrinsic calibration matrix:
+  <str>: # camera name str
+    - # 4 x list of four floats (camera extrinsics in the form of a transformation matrix)

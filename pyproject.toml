@@ -18,6 +18,7 @@ dependencies = [
     "pytest>=8.3.5",
     "pyyaml>=6.0.0",
     "scipy>=1.10.1",
+    "moviepy>=1.0.3,<2.0",
 ]
 
 [project.optional-dependencies]
@@ -30,14 +31,12 @@ tfds = [
     "tensorflow>=2.13.0",
     "tensorflow-io-gcs-filesystem<=0.34.0; python_version < '3.9'",  # 0.35+ dropped cp38 linux x86_64 wheels without declaring requires-python
     "tensorflow-datasets>=4.9.0",
-    "moviepy>=1.0.3,<2.0",
 ]
 
 # For droid robot inference
 # Install with: uv sync --extra droid
 # Note: openpi_client and droid.robot_env must be installed separately (not on PyPI)
 droid = [
-    "moviepy>=1.0.3,<2.0",
     "pandas>=2.0.0",
     "pillow>=10.0.0",
     "tqdm>=4.66.0",

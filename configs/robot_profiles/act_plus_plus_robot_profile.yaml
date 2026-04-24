@@ -20,13 +20,10 @@ camera_names:
 # ===== Observation Related =====
 # ===============================
 
-# Observation keys. Options: "joint_position", "cartesian_position", "gripper_position"
 robot_state_keys:
   - joint_position
   - gripper_position
 
-# Required for knowing what each index in the robot_state["joint_position"] corresponds to.
-# 7 joints per arm (follower_left, follower_right)
 robot_state_joint_names:
   - waist_left
   - shoulder_left
@@ -48,14 +45,10 @@ robot_state_joint_names:
 # ===== Action Related =====
 # ==========================
 
-# Action space.
-# Options: "joint_velocity", "joint_position", "cartesian_position", "cartesian_velocity"
-# Gripper options: "gripper_position", "gripper_velocity", "gripper_binary"
 action_space:
   - "joint_position"
   - "gripper_position"
 
-# Joint names corresponding to the arm action dimensions
 action_joint_names:
   - waist_left
   - shoulder_left
