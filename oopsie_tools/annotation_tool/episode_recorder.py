@@ -13,8 +13,8 @@ import imageio
 import numpy as np
 import datetime
 import yaml
-from robotic_failure_data.utils.robot_profile import RobotProfile, robot_profile_to_json
-from robotic_failure_data.utils.rotation_utils import ActionQuatConversion
+from oopsie_tools.utils.robot_profile import RobotProfile, robot_profile_to_json
+from oopsie_tools.utils.rotation_utils import ActionQuatConversion
 
 REQUIRED_OBSERVATION_KEYS = ["robot_state", "image_observation"]
 
