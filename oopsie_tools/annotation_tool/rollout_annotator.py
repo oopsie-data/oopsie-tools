@@ -177,6 +177,7 @@ class WebRolloutAnnotator:
         )
 
         # 3. Wait for annotation from human annotator
+        print(f"Waiting for annotation from human annotator at http://localhost:{self.port} ...")
         self._api_post(
             "/api/task/annotating",
             {
