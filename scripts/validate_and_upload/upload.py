@@ -8,8 +8,8 @@ Steps:
     4. Upload dataset files
 
 Usage:
-    python upload.py --output_dir /path/to/formatted_data          # validate all *.h5, upload whole folder
-    python upload.py --output_dir /path/to/formatted_data --episode_id 000001  # single episode
+    python upload.py --samples_dir /path/to/formatted_data          # validate all *.h5, upload whole folder
+    python upload.py --samples_dir /path/to/formatted_data --episode_id 000001  # single episode
 
 Environment:
     HF_TOKEN  — override the hardcoded token
@@ -86,13 +86,13 @@ def run_validation(base_path: str, episode_id: str) -> bool:
         return False
 
 
-def run_dir_validation(output_dir: str) -> bool:
-    """Validate every ``*.h5`` in output_dir."""
+def run_dir_validation(samples_dir: str) -> bool:
+    """Validate every ``*.h5`` in samples_dir."""
     _validate_import_path()
     from validate import validate_session_dir  # noqa: E402
 
     print("[validate] Running validation (all *.h5 in folder)...")
-    code = validate_session_dir(output_dir)
+    code = validate_session_dir(samples_dir)
     if code == 0:
         print("[validate] All files passed.\n")
         return True
@@ -121,19 +121,19 @@ def ensure_repo():
 # ── Step 4: upload ────────────────────────────────────────────────────────────
 
 
-def upload_dataset(output_dir: str, commit_message: str):
+def upload_dataset(samples_dir: str, commit_message: str):
     from huggingface_hub import HfApi
 
     api = HfApi(token=HF_TOKEN)
 
-    print(f"[upload] Uploading {output_dir} → {HF_REPO}")
+    print(f"[upload] Uploading {samples_dir} → {HF_REPO}")
     print("[upload] Files to upload:")
     total_bytes = 0
-    for root, _, files in os.walk(output_dir):
+    for root, _, files in os.walk(samples_dir):
         for f in files:
             fpath = os.path.join(root, f)
             size = os.path.getsize(fpath)
-            rel = os.path.relpath(fpath, output_dir)
+            rel = os.path.relpath(fpath, samples_dir)
             total_bytes += size
             print(f"           {rel}  ({size / 1e6:.1f} MB)")
 
@@ -141,7 +141,7 @@ def upload_dataset(output_dir: str, commit_message: str):
     print("[upload] Uploading (this may take several minutes)...")
 
     api.upload_folder(
-        folder_path=output_dir,
+        folder_path=samples_dir,
         repo_id=HF_REPO,
         repo_type="dataset",
         commit_message=commit_message,
@@ -161,7 +161,7 @@ def main():
         epilog=__doc__,
     )
     parser.add_argument(
-        "--output_dir",
+        "--samples_dir",
         "-o",
         required=True,
         help="Base directory containing formatted episode files",
@@ -170,7 +170,7 @@ def main():
         "--episode_id",
         "-e",
         default=None,
-        help="Episode ID (zero-padded, e.g. 000001); if omitted, all *.h5 files in output_dir are validated and uploaded",
+        help="Episode ID (zero-padded, e.g. 000001); if omitted, all *.h5 files in samples_dir are validated and uploaded",
     )
     parser.add_argument(
         "--skip_validate",
@@ -189,9 +189,9 @@ def main():
     # 1. Auth
     hf_login(HF_TOKEN)
 
-    output_dir = os.path.abspath(os.path.normpath(args.output_dir))
+    samples_dir = os.path.abspath(os.path.normpath(args.output_dir))
     if args.episode_id is None:
-        dir_name = os.path.basename(output_dir.rstrip(os.sep)) or output_dir
+        dir_name = os.path.basename(samples_dir.rstrip(os.sep)) or output_dir
         commit_message = f"Add {dir_name}"
     else:
         commit_message = f"Add episode {args.episode_id}"
@@ -199,9 +199,9 @@ def main():
     # 2. Validate
     if not args.skip_validate:
         if args.episode_id is None:
-            ok = run_dir_validation(output_dir)
+            ok = run_dir_validation(samples_dir)
         else:
-            ok = run_validation(output_dir, args.episode_id)
+            ok = run_validation(samples_dir, args.episode_id)
         if not ok:
             print("Aborting upload due to validation failure.")
             print("Fix the dataset format and retry.\n")
@@ -212,7 +212,7 @@ def main():
     # 3 + 4. Create repo and upload
     if not args.skip_upload:
         ensure_repo()
-        upload_dataset(output_dir, commit_message)
+        upload_dataset(samples_dir, commit_message)
     else:
         print("[upload] Skipped (--skip_upload).\n")
 
