@@ -155,6 +155,16 @@ This validates and pushes episodes to the lab-specific HuggingFace repository.
 
 - `lab_id` capitalisation mismatch → `RuntimeError` at `EpisodeRecorder.__init__`.
 - Action dict keys not matching `action_space` in the robot profile → validation error at `record_step`.
+- Passing an action chunk instead of per-step actions → validation error.
 - `cartesian_position` in state/action but `orientation_representation` not set → conversion will fail.
 - `robot_state_joint_names` length not matching the `joint_position` array length → HDF5 schema error.
 - Running `uv sync` without `--extra tfds` or `--extra droid` when those features are needed (note: those two extras conflict with each other).
+
+## Important mistakes that will not raise an error
+
+These need to be verified manually by the user.
+
+- Action space not in absolute, but in delta coordinates
+  - Delta coordinates cannot easily be processed by downstream applications as the base offset is not recorded
+- Quaternion representation is in wrong order if passed explicitly
+  - The framework provides a best effort test, but it cannot catch all edge-cases
