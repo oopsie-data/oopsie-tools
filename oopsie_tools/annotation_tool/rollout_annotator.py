@@ -69,7 +69,7 @@ class WebRolloutAnnotator:
                 [
                     "python",
                     "-m",
-                    "robotic_failure_data.annotation_tool.annotator_server",
+                    "oopsie_tools.annotation_tool.annotator_server",
                     "--samples-dir",
                     str(self.data_root_dir),
                     "--port",
