@@ -69,7 +69,7 @@ class EpisodeRecorder:
     def __init__(
         self,
         robot_profile: RobotProfile,
-        data_root_dir: str,
+        data_root_dir: Path | str,
         resume_session_name: str | None = None,
         operator_name: str | None = None,
     ) -> None:

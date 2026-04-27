@@ -34,7 +34,7 @@ class WebRolloutAnnotator:
     def __init__(
         self,
         robot_profile: RobotProfile,
-        data_root_dir: Path,
+        data_root_dir: Path | str,
         operator_name: str,
         annotator_name: str | None = None,
         port: int = 5001,
@@ -43,7 +43,8 @@ class WebRolloutAnnotator:
         resume_session_name: str | None = None,
     ) -> None:
         self.robot_profile = robot_profile
-        self.data_root_dir = data_root_dir.resolve()
+        self.data_root_dir = Path(data_root_dir)
+        self.data_root_dir = self.data_root_dir.resolve()
         self.operator_name = operator_name.strip()
         self.annotator_name = annotator_name.strip() if annotator_name is not None else self.operator_name
         self.port = port
@@ -52,7 +53,7 @@ class WebRolloutAnnotator:
         self._proc: subprocess.Popen | None = None
         self._active_recorder = EpisodeRecorder(
             robot_profile=self.robot_profile,
-            data_root_dir=str(self.data_root_dir),
+            data_root_dir=self.data_root_dir,
             resume_session_name=resume_session_name,
             operator_name=self.operator_name,
         )
