@@ -12,6 +12,9 @@ This repository currently provides around:
 
 For detailed explanations on how to use our tooling and contribute to the project, please visit [our website](https://oopsie-data.com/).
 
+For an overview of the steps necessary to integrate the tooling into your workflow and to contribute data to the official Oopsie Data repositories, check out [our quickstart guide](https://oopsie-data.com/quickstart).
+You can also use the information in AI_
+
 ## Repository structure
 
 The main tooling for data gathering and annotation is located in `oopsie-tools`.
