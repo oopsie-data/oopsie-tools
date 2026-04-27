@@ -284,7 +284,7 @@ class EpisodeRecorder:
         if missing_robot_state_keys:
             raise ValueError(
                 f"robot_state is missing required keys: {missing_robot_state_keys}. "
-                f"Required: {self.robot_profile.robot_state_keys}. Please pass it in your record_step() call"
+                f"Required: {self.robot_profile.robot_state_keys}. Please pass it in your record_step() call. Double check that the passed keys match the robot profile you initialized the recorder with."
             )
 
         image_observation = observation["image_observation"]
@@ -294,7 +294,7 @@ class EpisodeRecorder:
         if missing_image_observation_keys:
             raise ValueError(
                 f"image_observation is missing required keys: {missing_image_observation_keys}. "
-                f"Required: {self.robot_profile.camera_names} that you provided in the robot setup. Please pass it in your record_step() call"
+                f"Required: {self.robot_profile.camera_names} that you provided in the robot setup. Please pass it in your record_step() call. Double check that the passed keys match the robot profile you initialized the recorder with."
             )
 
         # Make sure the action is a dictionary
@@ -304,7 +304,7 @@ class EpisodeRecorder:
         # Make sure action has at least one key
         if not action:
             raise ValueError(
-                f"action must not be empty. Valid keys: {VALID_ACTION_KEYS}"
+                f"action must not be empty. Valid keys: {VALID_ACTION_KEYS}. Please pass it in your record_step() call. Double check that the passed keys match the robot profile you initialized the recorder with."
             )
 
         # Make sure the action keys are valid

@@ -142,6 +142,8 @@ class WebRolloutAnnotator:
         instruction: str,
         recorder: EpisodeRecorder | None = None,
     ) -> dict[str, Any] | None:
+        assert isinstance(instruction, str) and instruction.strip(), f"Instruction must be a non-empty string. got {instruction}"
+
         active_recorder = recorder or self._active_recorder
         if active_recorder is None:
             raise ValueError("EpisodeRecorder is required (pass recorder=...).")
