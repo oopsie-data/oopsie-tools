@@ -5,13 +5,13 @@
 # ===== Robot Setup Related =====
 # ===============================
 
-policy_name: # str
-robot_name: # str
-gripper_name: # str
-is_biarm: # bool
-uses_mobile_base: # bool
-control_freq: # int
-camera_names: # list of str
+policy_name: # str (Rq) (Example: "pi0.5", "openvla", "diffusion_policy_custom" ...)
+robot_name: # str (Required) (Example: "franka_panda", "franka_research_3", "ur5e", "yam_pro" ...)
+gripper_name: # str (Required) (Example: "robotiq_2f_85", "robotiq_2f_140", "yam_gripper" ...)
+is_biarm: # bool (Required)
+uses_mobile_base: # bool (Required)
+control_freq: # int (Required)
+camera_names: # list of str (Required) (Example: ["left", "right", "wrist"])
   - # str
 
 
@@ -19,12 +19,8 @@ camera_names: # list of str
 # ===== Observation Related =====
 # ===============================
 
-# Observation keys. Options: "joint_position", "cartesian_position", "gripper_position", "base_position"
+# Observation keys. Options: "joint_position" (Required), "gripper_position" (Required), "cartesian_position", "base_position"
 robot_state_keys: # list of str
-  - # str
-
-# Required for knowing what each index in the robot_state["joint_position"] corresponds to
-robot_state_joint_names: # list of str
   - # str
 
 # If cartesian_position is in the robot_state_keys, specify the orientation representation. Options:
@@ -40,18 +36,15 @@ robot_state_orientation_representation: # str
 # ===== Action Related =====
 # ==========================
 
-# Action space. 
+# Action space (Required) 
 # Options: "joint_velocity", "joint_position", "cartesian_position", "cartesian_velocity"
 # Gripper options: "gripper_position", "gripper_velocity", "gripper_binary"
 # Base options: "base_velocity", "base_position"
 action_space: # list of str
   - # str
 
-# If action space is joint velocity / joint position
-action_joint_names: # list of str
-  - # str
 
-# If action space is eef cartesian position, specify the orientation representation. Options:
+# If action space is cartesian position, specify the orientation representation. Options:
 # 1. "euler_{format}" (where format is "xyz", "xyx" ... (shape (3,))
 # 2. "quat" (quaternion should be scalar last, shape (4,))
 # 3. "matrix" (rotation matrix, shape (3, 3))
@@ -63,6 +56,16 @@ orientation_representation: # str
 # ==========================
 # ===== Optional Keys =====
 # ==========================
+
+# For knowing what each index in the robot_state["joint_position"] corresponds to
+robot_state_joint_names: # list of str
+  - # str
+
+
+# For knowing what each index in the action["joint_position"] corresponds to
+action_joint_names: # list of str
+  - # str
+
 
 # Options: "OSC", "joint_position", "joint_velocity"
 controller: # str
@@ -87,3 +90,4 @@ intrinsic calibration matrix:
 extrinsic calibration matrix:
   <str>: # camera name str
     - # 4 x list of four floats (camera extrinsics in the form of a transformation matrix)
+# ========================  

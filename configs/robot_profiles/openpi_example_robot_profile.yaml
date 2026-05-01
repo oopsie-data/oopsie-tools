@@ -6,7 +6,7 @@
 # ===============================
 
 policy_name: pi0.5
-robot_name: franka_droid
+robot_name: franka_research_3
 gripper_name: robotiq_2f_85
 is_biarm: false
 uses_mobile_base: false
@@ -29,13 +29,13 @@ robot_state_keys:
 
 # Required for knowing what each index in the robot_state["joint_position"] corresponds to
 robot_state_joint_names:
-  - joint_1
+  - base_joint
   - joint_2
   - joint_3
   - joint_4
   - joint_5
   - joint_6
-  - joint_7
+  - wrist_joint
 
 robot_state_orientation_representation: "euler_xyz" 
 
@@ -51,12 +51,10 @@ action_space:
 
 # If action space is joint velocity / joint position
 action_joint_names:
-  - joint_1
+  - base_joint
   - joint_2
   - joint_3
   - joint_4
   - joint_5
   - joint_6
-  - joint_7
-
-orientation_representation: "rot6d"   
+  - wrist_joint 
