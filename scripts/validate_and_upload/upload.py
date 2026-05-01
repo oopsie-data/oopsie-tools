@@ -189,9 +189,9 @@ def main():
     # 1. Auth
     hf_login(HF_TOKEN)
 
-    samples_dir = os.path.abspath(os.path.normpath(args.output_dir))
+    samples_dir = os.path.abspath(os.path.normpath(args.samples_dir))
     if args.episode_id is None:
-        dir_name = os.path.basename(samples_dir.rstrip(os.sep)) or output_dir
+        dir_name = os.path.basename(samples_dir.rstrip(os.sep)) or samples_dir
         commit_message = f"Add {dir_name}"
     else:
         commit_message = f"Add episode {args.episode_id}"

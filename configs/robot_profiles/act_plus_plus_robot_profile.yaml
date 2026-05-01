@@ -5,8 +5,8 @@
 # ===============================
 
 policy_name: act_plus_plus
-robot_name: aloha
-gripper_name: aloha_gripper
+robot_name: viperx_300
+gripper_name: viperx_300_gripper
 is_biarm: true
 uses_mobile_base: false
 control_freq: 50

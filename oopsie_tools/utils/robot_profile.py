@@ -11,14 +11,23 @@ import yaml
 
 from oopsie_tools.utils.rotation_utils import RotOption
 
-ALLOWED_ACTION_SPACES = frozenset(
-    {
-        "joint_position",
-        "joint_velocity",
-        "cartesian_position",
-        "cartesian_velocity",
-    }
-)
+ACTION_SPACE_SET_1 = {
+    "joint_position",
+    "joint_velocity",
+    "cartesian_position",
+    "cartesian_velocity",
+}
+
+ACTION_SPACE_SET_2 = {
+    "gripper_position", 
+    "gripper_velocity", 
+    "gripper_binary",
+}
+
+ACTION_SPACE_SET_3 = {
+    "base_velocity", 
+    "base_position",
+}
 
 REQUIRED_KEYS = frozenset(
     {
@@ -26,9 +35,10 @@ REQUIRED_KEYS = frozenset(
         "robot_name",
         "gripper_name",
         "control_freq",
+        "is_biarm",
+        "uses_mobile_base",
         "camera_names",
         "robot_state_keys",
-        "robot_state_joint_names",
         "action_space",
     }
 )
@@ -54,6 +64,7 @@ class RobotProfile:
     policy_name: str
     robot_name: str
     is_biarm: bool
+    uses_mobile_base: bool
     gripper_name: str
     control_freq: int
     camera_names: list[str]
@@ -123,6 +134,20 @@ def robot_profile_from_json(payload: str) -> RobotProfile:
     return robot_profile_from_raw(raw)
 
 
+def is_valid_action_space(action_space):
+    s = set(action_space)
+
+    arm_count = len(s & ACTION_SPACE_SET_1)
+    gripper_count = len(s & ACTION_SPACE_SET_2)
+    base_count = len(s & ACTION_SPACE_SET_3)
+
+    return (
+        arm_count == 1 and
+        gripper_count == 1 and
+        base_count <= 1 and
+        len(s) == arm_count + gripper_count + base_count  # no extras
+    )
+
 def robot_profile_from_raw(raw: Any) -> RobotProfile:
     """Validate and parse raw mapping data into ``RobotProfile``."""
     if not isinstance(raw, dict):
@@ -141,10 +166,15 @@ def robot_profile_from_raw(raw: Any) -> RobotProfile:
         )
 
     action_space = list(raw["action_space"])
-    if set(action_space).isdisjoint(ALLOWED_ACTION_SPACES):
+    if not is_valid_action_space(action_space):
         raise ValueError(
-            f"Unsupported action_space: {action_space!r}. "
-            f"Must contain one of {sorted(ALLOWED_ACTION_SPACES)}."
+            f"Invalid action_space: {action_space!r}. "
+            "Expected exactly 1 arm action from "
+            f"{sorted(ACTION_SPACE_SET_1)}, "
+            "exactly 1 gripper action from "
+            f"{sorted(ACTION_SPACE_SET_2)}, "
+            "and optionally 1 base action from "
+            f"{sorted(ACTION_SPACE_SET_3)}."
         )
 
     action_joint_names = _optional_str_list(raw.get("action_joint_names"))
@@ -177,6 +207,7 @@ def robot_profile_from_raw(raw: Any) -> RobotProfile:
         policy_name=raw["policy_name"],
         robot_name=raw["robot_name"],
         is_biarm=raw.get("is_biarm", False),  # default to False if not specified
+        uses_mobile_base=raw.get("uses_mobile_base", False),  # default to False if not specified
         gripper_name=raw["gripper_name"],
         control_freq=raw["control_freq"],
         camera_names=list(raw["camera_names"]),
