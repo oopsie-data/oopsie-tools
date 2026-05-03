@@ -423,9 +423,12 @@ class EpisodeRecorder:
             # 2. Save episode annotations if any
             if "episode_annotations" in data:
                 ea_group = f.create_group("episode_annotations")
-                success_val = data["episode_annotations"].get("success")
-                if success_val is not None:
-                    ea_group.attrs["success"] = float(success_val)
+                for annotator_name, annotation in data["episode_annotations"].items():
+                    ag = ea_group.require_group(annotator_name)
+                    for attr_key, attr_val in annotation.items():
+                        if attr_val is None:
+                            continue
+                        ag.attrs[attr_key] = attr_val
 
             # 3. Save the per-camera MP4 file paths (strings), not inlined frame tensors.
             observations_group = f.create_group("observations")

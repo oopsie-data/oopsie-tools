@@ -189,6 +189,14 @@ def write_valid_episode(
             camera_video_paths={"front": mp4_name},
             n_steps=n,
         )
+        _write_annotation(
+            f,
+            annotator="test_annotator",
+            success=1.0,
+            failure_description="",
+            failure_category=[],
+            severity="none",
+        )
     return h5_path
 
 
@@ -205,6 +213,14 @@ def make_unannotated(out_dir: Path) -> None:
             episode_id="episode_unannotated",
             language_instruction="pick up the red block",
             camera_video_paths={"front": "episode_unannotated_front.mp4"},
+        )
+        _write_annotation(
+            f,
+            annotator="test_annotator",
+            success=1.0,
+            failure_description="",
+            failure_category=[],
+            severity="none",
         )
 
 
@@ -261,6 +277,14 @@ def make_multi_camera(out_dir: Path) -> None:
                 "wrist": "episode_multi_camera_wrist.mp4",
             },
             robot_profile_json=_ROBOT_PROFILE_MULTI_CAM,
+        )
+        _write_annotation(
+            f,
+            annotator="test_annotator",
+            success=1.0,
+            failure_description="",
+            failure_category=[],
+            severity="none",
         )
 
 

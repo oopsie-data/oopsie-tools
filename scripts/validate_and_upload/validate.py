@@ -880,6 +880,44 @@ def _validate_video_trajectory_sizes(context: DataInstance) -> None:
     return True
 
 
+@register_test("episode_annotation")
+def _validate_episode_annotation(context: DataInstance) -> None:
+    """For oopsie_v1 episodes: episode_annotations group must exist, contain at
+    least one annotator subgroup, and every subgroup must have a numeric
+    success attribute in [0.0, 1.0].
+    """
+    if context.h5_schema != "oopsie_v1":
+        return
+
+    h5_file = context.h5_file
+    assert h5_file is not None
+    assert "episode_annotations" in h5_file, "Missing group: episode_annotations"
+
+    ea = h5_file["episode_annotations"]
+    annotators = list(ea.keys())
+    assert annotators, (
+        "episode_annotations group has no annotator subgroups — "
+        "episode has not been annotated yet"
+    )
+
+    for annotator in annotators:
+        ag = ea[annotator]
+        assert "success" in ag.attrs, (
+            f"Missing 'success' attr in episode_annotations/{annotator}"
+        )
+        success_val = ag.attrs["success"]
+        try:
+            success_float = float(success_val)
+        except (TypeError, ValueError):
+            raise AssertionError(
+                f"episode_annotations/{annotator}/success is not numeric: {success_val!r}"
+            )
+        assert 0.0 <= success_float <= 1.0, (
+            f"episode_annotations/{annotator}/success must be in [0.0, 1.0], "
+            f"got {success_float}"
+        )
+
+
 # TODO: Add this back
 # @register_test("failure_fields")
 def _validate_failure_fields(context: DataInstance) -> None:
