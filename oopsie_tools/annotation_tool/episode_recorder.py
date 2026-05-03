@@ -70,14 +70,15 @@ class EpisodeRecorder:
         self,
         robot_profile: RobotProfile,
         data_root_dir: Path | str,
+        operator_name: str,
         resume_session_name: str | None = None,
-        operator_name: str | None = None,
     ) -> None:
         """Initialize a recorder instance.
 
         Args:
             robot_profile (RobotProfile): Robot profile.
             data_root_dir (str): Base output directory for saved artifacts.
+            operator_name (str): Name of the operator recording the episode.
             session_name (str | None): Optional unique session name
 
         Raises:
@@ -191,9 +192,10 @@ class EpisodeRecorder:
     ) -> tuple[str, dict[str, str]]:
         video_paths: dict[str, str] = {}
         self.session_dir.mkdir(parents=True, exist_ok=True)
+        fps = float(self.robot_profile.control_freq)
         for cam_name, frames in self.frames.items():
             video_path = self.session_dir / f"{self.save_fname}_{cam_name}.mp4"
-            ImageSequenceClip(list(np.stack(frames)), fps=10).write_videofile(
+            ImageSequenceClip(list(np.stack(frames)), fps=fps).write_videofile(
                 str(video_path),
                 codec="libx264",
                 logger=None,
@@ -201,7 +203,7 @@ class EpisodeRecorder:
             video_paths[cam_name] = str(video_path.resolve())
         return video_paths
 
-    def finish_rollout(self, instruction: str) -> None:
+    def finish_rollout(self, instruction: str, success: float | None = None) -> None:
         # 1. Save videos under the recorder's per-session folder
         video_paths = self._save_videos()
 
@@ -212,6 +214,20 @@ class EpisodeRecorder:
                     "episode_id": self.save_fname,
                     "lab_id": self.lab_id,
                     "operator_name": self.operator_name,
+                },
+                "episode_annotations": {
+                    self.operator_name: {
+                        "schema": "oopsie_failure_taxonomy_v1",
+                        "source": "human",
+                        "timestamp": datetime.datetime.now().timestamp(),
+                        "failure_description": "",
+                        "taxonomy_schema": "none",
+                        "taxonomy": json.dumps(
+                            {}, ensure_ascii=False,
+                        ),
+                        "additional_notes": "",
+                        "success": success,
+                    },
                 },
                 "video_paths": video_paths,
             }
@@ -349,7 +365,7 @@ class EpisodeRecorder:
                     f"[x, y, z, qx, qy, qz, qw], got shape {arr.shape}"
                 )
             quat_norm = np.linalg.norm(arr[3:7])
-            if not np.isclose(quat_norm, 1.0, atol=1e-3):
+            if not np.isclose(quat_norm, 1.0, atol=1e-2):
                 raise ValueError(
                     f"action['{key}'][3:7] must be a unit scalar-last quaternion (norm ≈ 1.0), "
                     f"got norm {quat_norm:.6f}"
@@ -404,7 +420,14 @@ class EpisodeRecorder:
             f.attrs["lab_id"] = self.lab_id
             f.attrs["timestamp"] = self.timestamp
 
-            # 2. Save the per-camera MP4 file paths (strings), not inlined frame tensors.
+            # 2. Save episode annotations if any
+            if "episode_annotations" in data:
+                ea_group = f.create_group("episode_annotations")
+                success_val = data["episode_annotations"].get("success")
+                if success_val is not None:
+                    ea_group.attrs["success"] = float(success_val)
+
+            # 3. Save the per-camera MP4 file paths (strings), not inlined frame tensors.
             observations_group = f.create_group("observations")
             video_paths_group = observations_group.create_group("video_paths")
             video_paths = data.get("video_paths", {})
@@ -622,7 +645,8 @@ class EpisodeRecorder:
                 continue
 
             video_path = output_dir / f"{self.save_fname}_{cam}.mp4"
-            write_mp4(video_path=video_path, frames=np.asarray(frames), fps=10.0)
+            fps = float(self.robot_profile.control_freq)
+            write_mp4(video_path=video_path, frames=np.asarray(frames), fps=fps)
             paths[cam] = os.path.relpath(video_path.resolve(), start=output_dir)
 
         return paths
@@ -647,6 +671,7 @@ class EpisodeRecorder:
                 return np.asarray(observation[key])
         return None
 
+    @staticmethod
     def patch_h5_failure_annotation(
         h5_path: Path,
         annotation: dict[str, Any],
@@ -700,33 +725,6 @@ class EpisodeRecorder:
             int: Number of timesteps currently buffered.
         """
         return len(self.timesteps)
-
-
-class MinimalEpisodeRecorder(EpisodeRecorder):
-    """Episode recorder variant that persists data without metadata input."""
-
-    def save(self, metadata: dict[str, Any] | None = None) -> Path:
-        """Persist the buffered episode with empty/default metadata.
-
-        Args:
-            metadata (dict[str, Any] | None): Unused compatibility argument.
-
-        Returns:
-            Path: Path to the written HDF5 episode file.
-
-        Raises:
-            ValueError: If no rollout steps were recorded.
-        """
-        if len(self.timesteps) == 0:
-            raise ValueError("No steps recorded. Call record_step() first.")
-
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
-        h5_filename = f"{self.session_name}.h5"
-        h5_path = self.output_dir / h5_filename
-        self._save_h5(h5_path, metadata={})
-
-        return h5_path
 
 
 class InteractiveAnnotator:

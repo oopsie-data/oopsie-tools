@@ -162,6 +162,9 @@ class WebRolloutAnnotator:
         #
         # IMPORTANT: ensure camera_names is populated so EpisodeRecorder writes
         # `image_observations/<cam>` datasets pointing at MP4 filepaths.
+        # This will create an un-submittable file, as the success annotation is not yet
+        # available, but it allows the UI to show the videos immediately without waiting 
+        # for annotation.
         if not getattr(active_recorder, "camera_names", None):
             active_recorder.camera_names = list(video_paths.keys())
 
@@ -226,24 +229,6 @@ class WebRolloutAnnotator:
             EpisodeRecorder.patch_h5_failure_annotation(Path(h5_path), annotation)
 
         return annotation
-
-    def _save_videos(
-        self,
-        output_dir: Path,
-        sample_id: str,
-        videos: dict[str, list[np.ndarray]],
-    ) -> tuple[str, dict[str, str]]:
-        video_paths: dict[str, str] = {}
-        output_dir.mkdir(parents=True, exist_ok=True)
-        for cam_name, frames in videos.items():
-            video_path = output_dir / f"{sample_id}_{cam_name}.mp4"
-            ImageSequenceClip(list(np.stack(frames)), fps=10).write_videofile(
-                str(video_path),
-                codec="libx264",
-                logger=None,
-            )
-            video_paths[cam_name] = str(video_path.resolve())
-        return sample_id, video_paths
 
     def _wait_for_annotation(self, sample_id: str) -> dict[str, Any]:
         while True:

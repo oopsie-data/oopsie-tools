@@ -142,8 +142,8 @@ def is_valid_action_space(action_space):
     base_count = len(s & ACTION_SPACE_SET_3)
 
     return (
-        arm_count == 1 and
-        gripper_count == 1 and
+        arm_count >= 1 and
+        gripper_count >= 1 and
         base_count <= 1 and
         len(s) == arm_count + gripper_count + base_count  # no extras
     )
