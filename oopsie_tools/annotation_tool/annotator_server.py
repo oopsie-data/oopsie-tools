@@ -565,9 +565,22 @@ def api_h5_save_annotation():
     try:
         with h5py.File(h5_path, "r+") as f:
             ea = f.require_group("episode_annotations")
-            ea.attrs["failure_annotation"] = json.dumps(dict(ann), ensure_ascii=False)
+            ag = ea.require_group(ann["annotator"])
+            ag.attrs["schema"] = ann.get("schema", "oopsie_failure_taxonomy_v1")
+            ag.attrs["source"] = "human"
+            ag.attrs["timestamp"] = ann["annotated_at"]
             if success is not None:
-                ea.attrs["success"] = float(np.float32(success))
+                ag.attrs["success"] = float(success)
+            ag.attrs["failure_description"] = ann.get("failure_description", "")
+            ag.attrs["taxonomy_schema"] = "oopsiedata_taxonomy_schema_v1"
+            ag.attrs["taxonomy"] = json.dumps(
+                {
+                    "failure_category": ann.get("failure_category", []),
+                    "severity": ann.get("severity", ""),
+                },
+                ensure_ascii=False,
+            )
+            ag.attrs["additional_notes"] = ann.get("additional_notes", "")
     except OSError as e:
         return jsonify({"error": f"could not write HDF5: {e}"}), 500
     except Exception as e:
