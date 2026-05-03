@@ -371,10 +371,25 @@ def eval_bc(config, ckpt_name, episode_recorder: EpisodeRecorder):
             log_id = get_auto_index(ckpt_dir)
             np.save(os.path.join(ckpt_dir, f"qpos_{log_id}.npy"), qpos_history_raw)
 
+        # record success annotation
+        success: str | float | None = None
+        while not isinstance(success, float):
+            success = input(
+                "Did the rollout succeed? (enter y for 1.0, n for 0.0), or 1.0/0.0 for success/failure: "
+            )
+            if success == "y":
+                success = 1.0
+            elif success == "n":
+                success = 0.0
+
+            success = float(success)
+            if not success == 0.0 and not success == 1.0:
+                print(f"Success must be 1.0 or 0.0 but got: {success}")
+
         # =======================================
         # ===== OopsieData project specific =====
         # =======================================
-        episode_recorder.finish_rollout(instruction=instruction)
+        episode_recorder.finish_rollout(instruction=instruction, success=success)
         # =======================================
 
         if input("Do one more eval? (enter y or n) ").lower() != "y":

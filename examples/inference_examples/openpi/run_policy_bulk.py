@@ -240,21 +240,21 @@ def main(args: Args):
         success: str | float | None = None
         while not isinstance(success, float):
             success = input(
-                "Did the rollout succeed? (enter y for 100%, n for 0%), or a numeric value 0-100 based on the evaluation spec"
+                "Did the rollout succeed? (enter y for 1.0, n for 0.0), or 1.0/0.0 for success/failure: "
             )
             if success == "y":
                 success = 1.0
             elif success == "n":
                 success = 0.0
 
-            success = float(success) / 100
-            if not (0 <= success <= 1):
-                print(f"Success must be a number in [0, 100] but got: {success * 100}")
+            success = float(success)
+            if not success == 0.0 and not success == 1.0:
+                print(f"Success must be 1.0 or 0.0 but got: {success}")
 
         # =======================================
         # ===== OopsieData project specific =====
         # =======================================
-        episode_recorder.finish_rollout(instruction=instruction)
+        episode_recorder.finish_rollout(instruction=instruction, success=success)
         # =======================================
 
         df = df.append(

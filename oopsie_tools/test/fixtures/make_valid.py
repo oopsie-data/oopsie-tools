@@ -42,6 +42,7 @@ _ROBOT_PROFILE = json.dumps(
         "policy_name": "test_policy",
         "robot_name": "test_robot",
         "is_biarm": False,
+        "uses_mobile_base": False,
         "gripper_name": "test_gripper",
         "control_freq": 10,
         "camera_names": ["front"],

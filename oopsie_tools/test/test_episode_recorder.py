@@ -21,6 +21,7 @@ def _profile(**overrides) -> RobotProfile:
         policy_name="test_policy",
         robot_name="test_robot",
         is_biarm=False,
+        uses_mobile_base=False,
         gripper_name="test_gripper",
         control_freq=10,
         camera_names=["left", "wrist"],
@@ -71,7 +72,7 @@ def _save_data(recorder: EpisodeRecorder, cam_names: list[str]) -> dict:
 class TestEpisodeRecorderInit(unittest.TestCase):
     def test_session_dir_created(self):
         with tempfile.TemporaryDirectory() as tmp:
-            recorder = EpisodeRecorder(robot_profile=_profile(), data_root_dir=tmp)
+            recorder = EpisodeRecorder(robot_profile=_profile(), data_root_dir=tmp, operator_name="test_operator")
             self.assertTrue(recorder.session_dir.is_dir())
 
     def test_resume_session_name(self):
@@ -80,12 +81,13 @@ class TestEpisodeRecorderInit(unittest.TestCase):
                 robot_profile=_profile(),
                 data_root_dir=tmp,
                 resume_session_name="my_session",
+                operator_name="test_operator",
             )
             self.assertEqual(recorder.session_name, "my_session")
 
     def test_initial_num_steps_zero(self):
         with tempfile.TemporaryDirectory() as tmp:
-            recorder = EpisodeRecorder(robot_profile=_profile(), data_root_dir=tmp)
+            recorder = EpisodeRecorder(robot_profile=_profile(), data_root_dir=tmp, operator_name="test_operator")
             self.assertEqual(recorder.num_steps, 0)
 
 
@@ -94,7 +96,7 @@ class TestEpisodeRecorderRecordStep(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.profile = _profile()
         self.recorder = EpisodeRecorder(
-            robot_profile=self.profile, data_root_dir=self._tmp.name
+            robot_profile=self.profile, data_root_dir=self._tmp.name, operator_name="test_operator"
         )
         self.recorder.reset_episode_recorder()
 
@@ -173,7 +175,7 @@ class TestEpisodeRecorderSave(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.profile = _profile()
         self.recorder = EpisodeRecorder(
-            robot_profile=self.profile, data_root_dir=self._tmp.name
+            robot_profile=self.profile, data_root_dir=self._tmp.name, operator_name="test_operator"
         )
         self.recorder.reset_episode_recorder()
 
@@ -277,7 +279,7 @@ class TestRecordStepActionBreaking(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.profile = _profile()
         self.recorder = EpisodeRecorder(
-            robot_profile=self.profile, data_root_dir=self._tmp.name
+            robot_profile=self.profile, data_root_dir=self._tmp.name, operator_name="test_operator"
         )
         self.recorder.reset_episode_recorder()
 
