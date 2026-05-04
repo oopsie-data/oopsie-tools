@@ -121,8 +121,8 @@ class TestRequiredGroups:
         [
             ("invalid_actions_missing", "Missing group: actions"),
             ("invalid_robot_states_missing", "Missing group: observations/robot_states"),
-            # no observations/video_paths and no image_observations
-            ("invalid_no_video_group", "No camera video mapping found"),
+            # observations/video_paths group entirely absent
+            ("invalid_no_video_group", "Missing group: observations/video_paths"),
         ],
     )
     def test_missing_group_raises(self, invalid_fixtures, fixture_key, match):
@@ -130,7 +130,7 @@ class TestRequiredGroups:
             validate_h5_file(str(invalid_fixtures[fixture_key]))
 
     def test_missing_robot_state_key_raises(self, invalid_fixtures):
-        with pytest.raises(AssertionError, match="Missing observations/robot_states key"):
+        with pytest.raises(AssertionError, match="Missing observations/robot_states/"):
             validate_h5_file(str(invalid_fixtures["invalid_robot_state_missing_key"]))
 
 
@@ -171,14 +171,14 @@ class TestVideos:
     def test_inconsistent_video_lengths_raise(self, invalid_fixtures):
         with pytest.raises(
             AssertionError,
-            match="Inconsistent frame counts|Image size too small",
+            match="Inconsistent frame counts|Video too small",
         ):
             validate_h5_file(str(invalid_fixtures["invalid_inconsistent_video_lengths"]))
 
     def test_video_length_step_mismatch_raises(self, invalid_fixtures):
         with pytest.raises(
             AssertionError,
-            match="Frame count/trajectory mismatch|Image size too small",
+            match=r"Frame count.*trajectory mismatch|Video too small",
         ):
             validate_h5_file(str(invalid_fixtures["invalid_video_length_step_mismatch"]))
 
@@ -194,27 +194,27 @@ class TestProfileFileConsistency:
         [
             (
                 "invalid_joint_names_length_mismatch",
-                "robot_state_joint_names length does not match",
+                "robot_state_joint_names count does not match",
             ),
             (
                 "invalid_action_names_length_mismatch",
-                "action_joint_names length does not match",
+                "action_joint_names count does not match",
             ),
             (
                 "invalid_profile_camera_not_in_obs",
-                "Missing camera video paths",
+                "Missing observations/video_paths/",
             ),
             (
                 "invalid_profile_action_not_in_recorded",
-                "Missing actions key from profile.action_space",
+                "Missing actions/",
             ),
             (
                 "invalid_profile_rs_key_not_in_recorded",
-                "Missing observations/robot_states key",
+                "Missing observations/robot_states/",
             ),
             (
                 "invalid_multiple_promised_fields_missing",
-                "Missing observations/robot_states key",
+                "Missing observations/robot_states/",
             ),
         ],
     )

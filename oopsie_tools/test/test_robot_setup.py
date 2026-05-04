@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-from oopsie_tools.utils.robot_profile import (
+from oopsie_tools.utils.robot_profile.robot_profile import (
     RobotProfile,
     load_robot_profile,
     openpi_example_robot_profile_path,

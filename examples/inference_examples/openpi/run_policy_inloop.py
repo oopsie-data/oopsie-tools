@@ -24,7 +24,7 @@ import tyro
 # ===== OopsieData project specific =====
 # =======================================
 from oopsie_tools.annotation_tool.rollout_annotator import WebRolloutAnnotator
-from oopsie_tools.utils.robot_profile import *
+from oopsie_tools.utils.robot_profile.robot_profile import *
 # =======================================
 
 faulthandler.enable()

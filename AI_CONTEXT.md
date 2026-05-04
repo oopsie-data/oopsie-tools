@@ -133,7 +133,7 @@ recorder = EpisodeRecorder(
 recorder.record_step(observation=obs, action=action)
 
 # After the rollout ends:
-recorder.finish_rollout()
+recorder.finish_rollout(success=success) # success needs to be recorded by the user somehow
 ```
 
 Verify that the keys are consistent between the robot profile and the ones passed for recording. The data validation will fail otherwise.

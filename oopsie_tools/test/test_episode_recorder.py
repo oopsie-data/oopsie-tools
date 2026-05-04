@@ -13,7 +13,7 @@ from oopsie_tools.annotation_tool.episode_recorder import (
     EpisodeRecorder,
     write_mp4,
 )
-from oopsie_tools.utils.robot_profile import RobotProfile
+from oopsie_tools.utils.robot_profile.robot_profile import RobotProfile
 
 
 def _profile(**overrides) -> RobotProfile:

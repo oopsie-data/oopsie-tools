@@ -13,8 +13,10 @@ import imageio
 import numpy as np
 import datetime
 import yaml
-from oopsie_tools.utils.robot_profile import RobotProfile, robot_profile_to_json
-from oopsie_tools.utils.rotation_utils import ActionQuatConversion
+from oopsie_tools.utils.robot_profile.robot_profile import RobotProfile, robot_profile_to_json
+from oopsie_tools.utils.robot_profile.rotation_utils import ActionQuatConversion
+from oopsie_tools.utils.validation.episode_data import EpisodeData, VideoInfo
+from oopsie_tools.utils.validation.episode_validator import validate_episode
 
 REQUIRED_OBSERVATION_KEYS = ["robot_state", "image_observation"]
 
@@ -204,33 +206,37 @@ class EpisodeRecorder:
         return video_paths
 
     def finish_rollout(self, instruction: str, success: float | None = None) -> None:
-        # 1. Save videos under the recorder's per-session folder
-        video_paths = self._save_videos()
-
-        self.save(
-            {
+        data = {
                 "language_instruction": instruction,
                 "metadata": {
                     "episode_id": self.save_fname,
                     "lab_id": self.lab_id,
                     "operator_name": self.operator_name,
                 },
-                "episode_annotations": {
-                    self.operator_name: {
-                        "schema": "oopsie_failure_taxonomy_v1",
-                        "source": "human",
-                        "timestamp": datetime.datetime.now().timestamp(),
-                        "failure_description": "",
-                        "taxonomy_schema": "none",
-                        "taxonomy": json.dumps(
-                            {}, ensure_ascii=False,
-                        ),
-                        "additional_notes": "",
-                        "success": success,
-                    },
+        }
+        if success is not None:
+            data["episode_annotations"] = {
+                self.operator_name: {
+                    "schema": "oopsie_failure_taxonomy_v1",
+                    "source": "human",
+                    "timestamp": datetime.datetime.now().timestamp(),
+                    "failure_description": "",
+                    "taxonomy_schema": "none",
+                    "taxonomy": json.dumps(
+                        {}, ensure_ascii=False,
+                    ),
+                    "additional_notes": "",
+                    "success": success,
                 },
-                "video_paths": video_paths,
             }
+        self._validate_pre_save(data)
+        # 1. Save videos under the recorder's per-session folder
+        video_paths = self._save_videos()
+
+        data["video_paths"] = video_paths
+
+        self.save(
+            data
         )
 
     def save(self, data: dict[str, Any]) -> Path:
@@ -486,53 +492,6 @@ class EpisodeRecorder:
                         dtype=np.float64,
                     )
 
-            # eef_pos_values = [t["action_dict"]["cartesian_position"] for t in self.timesteps]
-            # if all(v is None for v in eef_pos_values):
-            #     action_group.create_dataset(
-            #         "cartesian_position", data=h5py.Empty(dtype=np.float64)
-            #     )
-            # else:
-            #     action_group.create_dataset(
-            #         "cartesian_position",
-            #         data=np.stack(eef_pos_values, axis=0),
-            #         dtype=np.float64,
-            #     )
-            # eef_vel_values = [t["action_dict"]["cartesian_velocity"] for t in self.timesteps]
-            # if all(v is None for v in eef_vel_values):
-            #     action_group.create_dataset(
-            #         "cartesian_velocity", data=h5py.Empty(dtype=np.float64)
-            #     )
-            # else:
-            #     action_group.create_dataset(
-            #         "cartesian_velocity",
-            #         data=np.stack(eef_vel_values, axis=0),
-            #         dtype=np.float64,
-            #     )
-
-            # joint_pos_values = [t["action_dict"]["joint_position"] for t in self.timesteps]
-            # if all(v is None for v in joint_pos_values):
-            #     action_group.create_dataset(
-            #         "joint_position", data=h5py.Empty(dtype=np.float64)
-            #     )
-            # else:
-            #     action_group.create_dataset(
-            #         "joint_position",
-            #         data=np.stack(joint_pos_values, axis=0),
-            #         dtype=np.float64,
-            #     )
-
-            # joint_vel_values = [t["action_dict"]["joint_velocity"] for t in self.timesteps]
-            # if all(v is None for v in joint_vel_values):
-            #     action_group.create_dataset(
-            #         "joint_velocity", data=h5py.Empty(dtype=np.float64)
-            #     )
-            # else:
-            #     action_group.create_dataset(
-            #         "joint_velocity",
-            #         data=np.stack(joint_vel_values, axis=0),
-            #         dtype=np.float64,
-            #     )
-
     def _normalize_metadata(self, metadata: dict[str, Any] | None) -> dict[str, Any]:
         """Validate and normalize user-provided metadata.
 
@@ -673,6 +632,40 @@ class EpisodeRecorder:
             if key in observation:
                 return np.asarray(observation[key])
         return None
+
+    def _validate_pre_save(self, data: dict[str, Any]) -> None:
+        """Perform final validation checks before saving the episode.
+
+        Args:
+            data (dict[str, Any]): Full episode data payload to validate.
+
+        Raises:
+            ValueError: If any required fields are missing or invalid.
+        """
+        episode_data = EpisodeData(
+            robot_profile=self.robot_profile,
+            language_instruction=data.get("language_instruction", ""),
+            episode_id=data["metadata"]["episode_id"],
+            lab_id=data["metadata"]["lab_id"],
+            operator_name=data["metadata"]["operator_name"],
+            trajectory_length=len(self.timesteps),
+            control_freq=float(self.robot_profile.control_freq),
+            observations={
+                key: np.stack([t["robot_state"][key] for t in self.timesteps], axis=0)
+                for key in self.robot_profile.robot_state_keys
+            },
+            actions={
+                key: np.stack(
+                    [t["action_dict"][key] for t in self.timesteps], axis=0
+                )
+                for key in self.timesteps[0]["action_dict"]
+            },
+            videos={
+                cam: VideoInfo.from_frames(self.frames[cam], fps=self.robot_profile.control_freq) for cam in self.camera_names
+            },
+            annotations=data.get("episode_annotations", None),
+        )
+        validate_episode(episode_data)
 
     @staticmethod
     def patch_h5_failure_annotation(

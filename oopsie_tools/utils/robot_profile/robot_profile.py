@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from oopsie_tools.utils.rotation_utils import RotOption
+from oopsie_tools.utils.robot_profile.rotation_utils import RotOption
 
 ACTION_SPACE_SET_1 = {
     "joint_position",
@@ -97,7 +97,7 @@ def robot_profile_to_json(profile: RobotProfile) -> str:
 
 def robot_profile_config_dir() -> Path:
     """Directory containing bundled ``*.yaml`` robot profiles."""
-    return Path(__file__).resolve().parent.parent.parent / "configs" / "robot_profiles"
+    return Path(__file__).resolve().parent.parent.parent.parent / "configs" / "robot_profiles"
 
 
 def default_robot_profile_path() -> Path:
