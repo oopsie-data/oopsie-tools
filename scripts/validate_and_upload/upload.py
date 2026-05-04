@@ -20,6 +20,7 @@ import yaml
 import os
 import argparse
 from pathlib import Path
+from oopsie_tools.utils.validation.validation_utils import validate_h5_file, validate_session_dir
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -70,34 +71,21 @@ def _validate_import_path():
 
 
 def run_validation(base_path: str, episode_id: str) -> bool:
-    _validate_import_path()
-    from validate import validate_policy_data  # noqa: E402
+    target = os.path.join(base_path, f"{episode_id}.h5") if episode_id else base_path
+    if os.path.isfile(target):
+        try:
+            validate_h5_file(target)
+            print(f"\n✓ {os.path.basename(target)} passed\n")
+            return 0
+        except AssertionError as e:
+            print(f"\n✗ Validation failed: {e}\n")
+            return 1
+        except Exception as e:
+            print(f"\n✗ Unexpected error: {e}\n")
+            return 1
 
-    print("[validate] Running validation...")
-    try:
-        validate_policy_data(base_path, episode_id)
-        print("[validate] All checks passed.\n")
-        return True
-    except AssertionError as e:
-        print(f"[validate] FAILED: {e}\n")
-        return False
-    except Exception as e:
-        print(f"[validate] ERROR: {e}\n")
-        return False
-
-
-def run_dir_validation(samples_dir: str) -> bool:
-    """Validate every ``*.h5`` in samples_dir."""
-    _validate_import_path()
-    from validate import validate_session_dir  # noqa: E402
-
-    print("[validate] Running validation (all *.h5 in folder)...")
-    code = validate_session_dir(samples_dir)
-    if code == 0:
-        print("[validate] All files passed.\n")
-        return True
-    print("[validate] One or more files failed.\n")
-    return False
+    if os.path.isdir(target):
+        return validate_session_dir(target)
 
 
 # ── Step 3: create repo (if needed) ───────────────────────────────────────────
@@ -161,7 +149,7 @@ def main():
         epilog=__doc__,
     )
     parser.add_argument(
-        "--samples_dir",
+        "--path",
         "-o",
         required=True,
         help="Base directory containing formatted episode files",
@@ -170,7 +158,7 @@ def main():
         "--episode_id",
         "-e",
         default=None,
-        help="Episode ID (zero-padded, e.g. 000001); if omitted, all *.h5 files in samples_dir are validated and uploaded",
+        help="Episode ID (zero-padded, e.g. 000001); if omitted, all *.h5 files in path are validated and uploaded",
     )
     parser.add_argument(
         "--skip_validate",
@@ -189,7 +177,7 @@ def main():
     # 1. Auth
     hf_login(HF_TOKEN)
 
-    samples_dir = os.path.abspath(os.path.normpath(args.samples_dir))
+    samples_dir = os.path.abspath(os.path.normpath(args.path))
     if args.episode_id is None:
         dir_name = os.path.basename(samples_dir.rstrip(os.sep)) or samples_dir
         commit_message = f"Add {dir_name}"
@@ -198,10 +186,7 @@ def main():
 
     # 2. Validate
     if not args.skip_validate:
-        if args.episode_id is None:
-            ok = run_dir_validation(samples_dir)
-        else:
-            ok = run_validation(samples_dir, args.episode_id)
+        ok = run_validation(samples_dir, args.episode_id)
         if not ok:
             print("Aborting upload due to validation failure.")
             print("Fix the dataset format and retry.\n")
