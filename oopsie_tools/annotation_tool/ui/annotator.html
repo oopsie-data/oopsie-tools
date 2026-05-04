@@ -85,19 +85,42 @@
       }
       .context-bar .ctx-value.statusline { color: #cbd5e1; }
 
-      .main-content { display: grid; grid-template-columns: 260px 1fr 400px; gap: 20px; }
+      .main-content {
+        display: grid;
+        grid-template-columns: 260px 1fr 400px;
+        gap: 20px;
+        align-items: stretch;
+      }
 
       /* Left: h5 tree (styled like sample-list) */
       .sidebar {
         background: #16213e;
         border-radius: 8px;
         padding: 10px;
-        max-height: calc(100vh - 120px);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        align-self: stretch;
+      }
+      .sidebar #h5List {
+        flex: 1 1 auto;
+        min-height: 0;
         overflow-y: auto;
+        margin-top: 10px;
       }
       .h5-header { display:flex; align-items:center; margin-bottom: 10px; padding: 0 5px; }
       .h5-title { font-size: 0.9rem; color: #94a3b8; font-weight: 600; }
-      .h5-search { width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #333; border-radius: 6px; background: #1a1a2e; color: #fff; font-size: 0.95rem; }
+      .h5-search { width: 100%; margin: 0 0 10px; padding: 10px; border: 1px solid #333; border-radius: 6px; background: #1a1a2e; color: #fff; font-size: 0.95rem; }
+      .h5-legend {
+        font-size: 0.72rem;
+        line-height: 1.45;
+        color: #94a3b8;
+        padding: 0 5px 10px;
+        border-bottom: 1px solid #2a3f5f;
+        margin-bottom: 10px;
+      }
+      .h5-legend-row { margin-top: 4px; }
+      .h5-legend-row:first-child { margin-top: 0; }
       .muted { opacity: 0.85; color: #94a3b8; }
 
       button { padding: 10px 14px; border-radius: 6px; border: 1px solid #333; cursor: pointer; font-weight: 600; background: transparent; color: #60a5fa; }
@@ -111,6 +134,8 @@
         background: #16213e;
         border-radius: 8px;
         padding: 20px;
+        min-height: 0;
+        align-self: stretch;
       }
       .video-label {
         font-size: 0.85rem;
@@ -128,8 +153,17 @@
         padding: 20px;
         display: flex;
         flex-direction: column;
+        min-height: 0;
+        align-self: stretch;
       }
       .form-group { margin-bottom: 20px; }
+      .form-divider {
+        margin: 8px 0 14px;
+        padding-top: 8px;
+        border-top: 1px solid #334155;
+        font-size: 0.78rem;
+        color: #94a3b8;
+      }
       label { display: block; margin-bottom: 8px; font-weight: 500; }
       .required::after { content: " *"; color: #f87171; }
       input[type="text"], textarea, select {
@@ -271,7 +305,10 @@
 
       @media (max-width: 1200px) {
         .main-content { grid-template-columns: 1fr; }
-        .sidebar { max-height: none; }
+        .sidebar #h5List {
+          flex: 0 1 auto;
+          max-height: min(420px, 50vh);
+        }
         .videos-grid { grid-template-columns: 1fr; }
       }
     </style>
@@ -305,9 +342,13 @@
           <div class="h5-header">
             <div class="h5-title">HDF5 files</div>
           </div>
+          <div class="h5-legend" aria-label="Annotation status icons">
+            <div class="h5-legend-row"><span class="tick">✓</span> Only Success/failure Annotated (failure details incomplete).</div>
+            <div class="h5-legend-row"><span class="tick">✓✓</span> Complete: Success/failure Annotated with description, category, and severity.</div>
+          </div>
           <input id="h5Search" class="h5-search" type="text" placeholder="Search…" />
           <div class="muted" id="h5Count"></div>
-          <div id="h5List" style="margin-top:10px;"></div>
+          <div id="h5List"></div>
         </div>
 
         <div class="video-section">
@@ -495,6 +536,10 @@
         const name = q.name || q.id || q.key || "";
         const label = q.label || q.prompt || name;
         const type = (q.type || "text").toLowerCase();
+        const sectionIntro =
+          name === "additional_notes"
+            ? `<div class="form-divider"></div>`
+            : "";
         const required = q.required ? "data-required='1'" : "";
         const optLabel = (o) => (typeof o === "string" ? o : (o && o.name ? String(o.name) : ""));
         const optInfo = (o) => (typeof o === "object" && o && o.long_form)
@@ -503,6 +548,7 @@
         if (type === "select" || type === "dropdown") {
           const opts = (q.options || []).map(o => `<option value="${optLabel(o)}">${optLabel(o)}</option>`).join("");
           return `
+            ${sectionIntro}
             <div class="form-group" data-question-id="${name}" data-qtype="${type}">
             <label class="${q.required ? "required" : ""}">${label}</label>
             <select name="${name}" data-qname="${name}" ${required}>
@@ -521,6 +567,7 @@
             </label>
           `).join("");
           return `
+            ${sectionIntro}
             <div class="form-group" data-question-id="${name}" data-qtype="radio" ${q.required ? "data-required-group='1'" : ""}>
               <label class="${q.required ? "required" : ""}">${label}</label>
               <div>${opts}</div>
@@ -536,6 +583,7 @@
             </label>
           `).join("");
           return `
+            ${sectionIntro}
             <div class="form-group" data-question-id="${name}" data-qtype="checkbox" ${q.required ? "data-required-group='1'" : ""}>
               <label class="${q.required ? "required" : ""}">${label}</label>
               <div>${opts}</div>
@@ -543,8 +591,14 @@
           `;
         }
         if (type === "textarea") {
+          const failureBlockIntro =
+            name === "failure_description"
+              ? `<div class="form-divider">Fill all or leave all.</div>`
+              : "";
           return `
+            ${sectionIntro}
             <div class="form-group" data-question-id="${name}" data-qtype="textarea">
+            ${failureBlockIntro}
             <label class="${q.required ? "required" : ""}">${label}</label>
             <textarea name="${name}" data-qname="${name}" ${required}></textarea>
             </div>
@@ -552,11 +606,54 @@
         }
         // default: text
         return `
+          ${sectionIntro}
           <div class="form-group" data-question-id="${name}" data-qtype="text">
           <label class="${q.required ? "required" : ""}">${label}</label>
           <input type="text" name="${name}" data-qname="${name}" ${required} />
           </div>
         `;
+      }
+
+      /**
+       * Optional radio: click the already-selected row again to clear.
+       * Listeners must live on the <label> (or capture), because clicks on the text
+       * do not target the <input>, so input-only mousedown never ran.
+       */
+      function attachOptionalRadioDeselect(spec) {
+        const qs = Array.isArray(spec?.questions) ? spec.questions : [];
+        for (const q of qs) {
+          const id = q.id || q.name || q.key;
+          if (!id || Boolean(q.required)) continue;
+          if (String(q.type || "").toLowerCase() !== "radio") continue;
+          const group = document.querySelector(`[data-question-id="${CSS.escape(id)}"]`);
+          if (!group) continue;
+          group.querySelectorAll("label.opt-row").forEach((label) => {
+            const radio = label.querySelector('input[type="radio"]');
+            if (!radio) return;
+            label.addEventListener("pointerdown", () => {
+              if (radio.checked) {
+                radio.dataset.__deselectTap = "1";
+              } else {
+                delete radio.dataset.__deselectTap;
+              }
+            });
+            label.addEventListener("pointerleave", () => {
+              delete radio.dataset.__deselectTap;
+            });
+            label.addEventListener(
+              "click",
+              (e) => {
+                if (radio.dataset.__deselectTap === "1") {
+                  delete radio.dataset.__deselectTap;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  radio.checked = false;
+                }
+              },
+              true,
+            );
+          });
+        }
       }
 
       function renderQuestionnaire(spec) {
@@ -575,6 +672,7 @@
         document.querySelectorAll('input[type="radio"][name="binary_success"]').forEach((r) => {
           r.addEventListener("change", applySuccessConditional);
         });
+        attachOptionalRadioDeselect(spec);
         applySuccessConditional();
       }
 
@@ -619,6 +717,21 @@
         return true;
       }
 
+      function validateSaveAnswers(answers) {
+        if (!String(answers?.binary_success ?? "").trim()) {
+          return "Please annotate success/failure.";
+        }
+        const categoryFilled =
+          Array.isArray(answers?.failure_category) && answers.failure_category.length > 0;
+        const descriptionFilled = Boolean(String(answers?.failure_description ?? "").trim());
+        const severityFilled = Boolean(String(answers?.severity ?? "").trim());
+        const filledCount = [categoryFilled, descriptionFilled, severityFilled].filter(Boolean).length;
+        if (filledCount !== 0 && filledCount !== 3) {
+          return "Fill all of failure description, category, and severity, or leave all three empty.";
+        }
+        return "";
+      }
+
       const FAILURE_ONLY_QUESTIONS = ["failure_category", "failure_description", "severity"];
 
       function applySuccessConditional() {
@@ -651,7 +764,7 @@
           const items = await jget("/api/h5/list");
           const arr = Array.isArray(items) ? items : [];
           // Lightweight signature: rel_path + annotated + mtime.
-          const sig = arr.map(it => `${it.rel_path}|${it.annotated ? 1 : 0}|${it.mtime}`).join("\n");
+          const sig = arr.map(it => `${it.rel_path}|${Number(it.annotation_tick_level ?? 0)}|${it.mtime}`).join("\n");
           if (sig !== lastH5ListSig) {
             lastH5ListSig = sig;
             window.__h5Items = arr;
@@ -732,7 +845,8 @@
           for (const it of fileEntries) {
             const rp = String(it.rel_path || "");
             const active = (browseRelPath === rp) ? "active" : "";
-            const tick = it.annotated ? "✓ " : "";
+            const tl = Number(it.annotation_tick_level ?? 0);
+            const tick = tl >= 2 ? "✓✓ " : tl >= 1 ? "✓ " : "";
             const indent = depth * 14;
             lines.push(
               `<div class="tree-row ${active}" data-kind="file" data-rel="${esc(rp)}" style="margin-left:${indent}px;">` +
@@ -951,14 +1065,19 @@
 
       el("saveBtn").addEventListener("click", async () => {
         if (!currentSampleId && !browseRelPath) return;
+        const answers = gatherAnswers();
         if (!validateRequired()) {
           el("saveMsg").textContent = "Please fill required fields.";
+          return;
+        }
+        const saveValidationError = validateSaveAnswers(answers);
+        if (saveValidationError) {
+          el("saveMsg").textContent = saveValidationError;
           return;
         }
         el("saveMsg").textContent = "";
         el("saveBtn").disabled = true;
         try {
-          const answers = gatherAnswers();
           if (browseRelPath) {
             await jpost(`/api/h5/annotations?path=${encodeURIComponent(browseRelPath)}`, answers);
           } else {

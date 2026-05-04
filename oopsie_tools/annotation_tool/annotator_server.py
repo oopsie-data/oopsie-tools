@@ -389,6 +389,94 @@ def _annotator_subgroup_looks_annotated(fa: h5py.Group) -> bool:
     return False
 
 
+def _read_existing_annotation_dict(ea: h5py.Group, annotator_name: str) -> dict[str, Any]:
+    """Same episode_annotations extraction as ``/api/h5/sample`` (subgroup first, else JSON)."""
+    existing_annotation: dict[str, Any] = {}
+    if annotator_name in ea.keys() and isinstance(ea[annotator_name], h5py.Group):
+        fa = ea[annotator_name]
+        succ = _read_h5_attr(fa, "success", None)
+        bs_label = _binary_success_from_success_attr(succ)
+        if bs_label is not None:
+            existing_annotation["binary_success"] = bs_label
+        existing_annotation["failure_description"] = str(
+            _read_h5_attr(fa, "failure_description", "") or ""
+        )
+        existing_annotation["additional_notes"] = str(
+            _read_h5_attr(fa, "additional_notes", "") or ""
+        )
+        tax = _parse_taxonomy_json(_read_h5_attr(fa, "taxonomy", ""))
+        fc = tax.get("failure_category")
+        if fc is not None:
+            if isinstance(fc, (list, tuple)):
+                existing_annotation["failure_category"] = [str(x) for x in fc]
+            else:
+                existing_annotation["failure_category"] = [str(fc)]
+        sev = tax.get("severity")
+        if sev is not None:
+            existing_annotation["severity"] = str(sev)
+
+    if not existing_annotation:
+        raw_failure = _read_h5_attr(ea, "failure_annotation", "")
+        raw_s = str(raw_failure or "").strip()
+        if raw_s:
+            try:
+                parsed = json.loads(raw_s)
+                if isinstance(parsed, dict) and parsed:
+                    skip = {"annotated_at", "annotator", "source"}
+                    existing_annotation = {
+                        k: v for k, v in parsed.items() if k not in skip
+                    }
+            except Exception:
+                pass
+
+    return existing_annotation
+
+
+def _annotation_tick_level(ann: dict[str, Any]) -> int:
+    """0 = none, 1 = success/failure only (or incomplete failure bundle), 2 = complete."""
+    bs = str(ann.get("binary_success", "")).strip()
+    if bs not in ("Success", "Failure"):
+        return 0
+    if bs == "Success":
+        return 2
+    cat = ann.get("failure_category")
+    if isinstance(cat, (list, tuple)):
+        cat_ok = len(cat) > 0
+    else:
+        cat_ok = bool(str(cat or "").strip())
+    desc_ok = bool(str(ann.get("failure_description", "") or "").strip())
+    sev_ok = bool(str(ann.get("severity", "") or "").strip())
+    if cat_ok and desc_ok and sev_ok:
+        return 2
+    return 1
+
+
+def _h5_annotation_tick_level(h5f: h5py.File, annotator_name: str) -> int:
+    ea = h5f.get("episode_annotations")
+    if not isinstance(ea, h5py.Group):
+        return 0
+    ann = _read_existing_annotation_dict(ea, annotator_name)
+    level = _annotation_tick_level(ann)
+    if level > 0:
+        return level
+    raw = _read_h5_attr(ea, "failure_annotation", "")
+    raw_s = str(raw or "").strip()
+    if raw_s:
+        try:
+            parsed = json.loads(raw_s)
+            if isinstance(parsed, dict):
+                if len(parsed) > 0:
+                    return 1
+            elif bool(parsed):
+                return 1
+        except Exception:
+            return 1
+    if annotator_name in ea.keys() and isinstance(ea[annotator_name], h5py.Group):
+        if _annotator_subgroup_looks_annotated(ea[annotator_name]):
+            return 1
+    return 0
+
+
 @app.get("/api/h5/list")
 def api_h5_list():
     rt = _get_runtime()
@@ -398,31 +486,13 @@ def api_h5_list():
         if not p.is_file():
             continue
         rel = p.resolve().relative_to(root).as_posix()
-        annotated = False
+        tick_level = 0
         try:
             with h5py.File(p, "r") as h5f:
-                ea = h5f.get("episode_annotations")
-                if isinstance(ea, h5py.Group):
-                    raw = _read_h5_attr(ea, "failure_annotation", "")
-                    raw_s = str(raw or "").strip()
-                    if raw_s:
-                        try:
-                            parsed = json.loads(raw_s)
-                            # Treat empty JSON object `{}` as not annotated.
-                            if isinstance(parsed, dict):
-                                annotated = len(parsed) > 0
-                            else:
-                                # Any other valid JSON (e.g. string/list) counts as annotated if non-empty.
-                                annotated = bool(parsed)
-                        except Exception:
-                            # Non-JSON payload (legacy / free-text) counts as annotated if non-empty.
-                            annotated = True
-                    if not annotated:
-                        ann = rt.cfg.annotator_name
-                        if ann in ea.keys() and isinstance(ea[ann], h5py.Group):
-                            annotated = _annotator_subgroup_looks_annotated(ea[ann])
+                tick_level = _h5_annotation_tick_level(h5f, rt.cfg.annotator_name)
         except Exception:
-            annotated = False
+            tick_level = 0
+        annotated = tick_level >= 1
         entries.append(
             {
                 "id": rel.replace("/", "__"),
@@ -430,6 +500,7 @@ def api_h5_list():
                 "display_name": p.name,
                 "mtime": p.stat().st_mtime,
                 "annotated": annotated,
+                "annotation_tick_level": tick_level,
             }
         )
     entries.sort(key=lambda e: e.get("rel_path") or "")
@@ -464,40 +535,7 @@ def api_h5_sample():
             if ann_name in ea.keys() and isinstance(ea[ann_name], h5py.Group):
                 fa = ea[ann_name]
                 metadata["success"] = _read_h5_attr(fa, "success", None)
-                succ = _read_h5_attr(fa, "success", None)
-                bs_label = _binary_success_from_success_attr(succ)
-                if bs_label is not None:
-                    existing_annotation["binary_success"] = bs_label
-                existing_annotation["failure_description"] = str(
-                    _read_h5_attr(fa, "failure_description", "") or ""
-                )
-                existing_annotation["additional_notes"] = str(
-                    _read_h5_attr(fa, "additional_notes", "") or ""
-                )
-                tax = _parse_taxonomy_json(_read_h5_attr(fa, "taxonomy", ""))
-                fc = tax.get("failure_category")
-                if fc is not None:
-                    if isinstance(fc, (list, tuple)):
-                        existing_annotation["failure_category"] = [str(x) for x in fc]
-                    else:
-                        existing_annotation["failure_category"] = [str(fc)]
-                sev = tax.get("severity")
-                if sev is not None:
-                    existing_annotation["severity"] = str(sev)
-
-            if not existing_annotation:
-                raw_failure = _read_h5_attr(ea, "failure_annotation", "")
-                raw_s = str(raw_failure or "").strip()
-                if raw_s:
-                    try:
-                        parsed = json.loads(raw_s)
-                        if isinstance(parsed, dict) and parsed:
-                            skip = {"annotated_at", "annotator", "source"}
-                            existing_annotation = {
-                                k: v for k, v in parsed.items() if k not in skip
-                            }
-                    except Exception:
-                        pass
+            existing_annotation = _read_existing_annotation_dict(ea, ann_name)
 
         # breakpoint()
         image_group = h5f.get("image_observations")
