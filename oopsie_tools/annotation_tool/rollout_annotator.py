@@ -157,7 +157,7 @@ class WebRolloutAnnotator:
                     "operator_name": self.operator_name,
                 },
             }
-        self._active_recorder._validate_episode_data(data)  # raises if invalid, to avoid saving unwritable data
+        self._active_recorder._validate_pre_save(data)  # raises if invalid, to avoid saving unwritable data
 
         # 1. Save videos under the recorder's per-session folder
         video_paths = active_recorder._save_videos()

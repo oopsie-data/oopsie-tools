@@ -210,7 +210,6 @@ class EpisodeRecorder:
                 "language_instruction": instruction,
                 "metadata": {
                     "episode_id": self.save_fname,
-                    "lab_id": self.lab_id,
                     "operator_name": self.operator_name,
                 },
         }
@@ -646,7 +645,7 @@ class EpisodeRecorder:
             robot_profile=self.robot_profile,
             language_instruction=data.get("language_instruction", ""),
             episode_id=data["metadata"]["episode_id"],
-            lab_id=data["metadata"]["lab_id"],
+            lab_id=self.lab_id,
             operator_name=data["metadata"]["operator_name"],
             trajectory_length=len(self.timesteps),
             control_freq=float(self.robot_profile.control_freq),
