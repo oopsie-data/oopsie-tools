@@ -18,7 +18,7 @@ MIN_TRAJECTORY_LENGTH = 2
 MAX_TRAJECTORY_LENGTH = 300
 
 
-def validate_episode(data: EpisodeData) -> None:
+def validate_episode(data: EpisodeData, strict_annotation_check: bool = False) -> None:
     """Run all semantic checks on a loaded EpisodeData.
 
     Raises AssertionError with a descriptive message on the first failure.
@@ -29,6 +29,8 @@ def validate_episode(data: EpisodeData) -> None:
     _validate_trajectory_lengths(data)
     _validate_video_specs(data)
     if data.annotations is not None:
+        if strict_annotation_check:
+            assert data.annotations, "Annotations dict is empty, must be provided on strict annotation check for upload"
         _validate_annotations(data)
 
 

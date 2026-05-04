@@ -22,12 +22,17 @@ def main() -> int:
         type=str,
         help="Path to a single .h5 file or a session directory containing .h5 files",
     )
+    parser.add_argument(
+        "--strict_annotation_check",
+        action="store_true",
+        help="If set, require that annotations are present and non-empty (recommended for upload validation)",
+    )
     args = parser.parse_args()
     target = os.path.abspath(os.path.normpath(args.path))
 
     if os.path.isfile(target):
         try:
-            validate_h5_file(target)
+            validate_h5_file(target, strict_annotation_check=args.strict_annotation_check)
             print(f"\n✓ {os.path.basename(target)} passed\n")
             return 0
         except AssertionError as e:

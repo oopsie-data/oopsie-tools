@@ -14,11 +14,12 @@ from oopsie_tools.utils.validation.episode_loader import load_episode_from_h5
 from oopsie_tools.utils.validation.episode_validator import validate_episode
 
 
-def validate_h5_file(h5_path: str) -> bool:
+def validate_h5_file(h5_path: str, strict_annotation_check: bool = False) -> bool:
     """Validate a single HDF5 episode file.
 
     Args:
         h5_path: Path to the .h5 file.
+        strict_annotation_check: If True, require that annotations are present and non-empty.
 
     Returns:
         True if all checks pass.
@@ -27,11 +28,11 @@ def validate_h5_file(h5_path: str) -> bool:
         AssertionError: On the first validation failure.
     """
     data = load_episode_from_h5(h5_path)
-    validate_episode(data)
+    validate_episode(data, strict_annotation_check=strict_annotation_check)
     return True
 
 
-def validate_session_dir(session_dir: str) -> int:
+def validate_session_dir(session_dir: str, strict_annotation_check: bool = False ) -> int:
     """Validate every ``*.h5`` / ``*.hdf5`` file in a session directory.
 
     Returns:
@@ -59,7 +60,7 @@ def validate_session_dir(session_dir: str) -> int:
         name = os.path.basename(path)
         print(f"{'=' * 72}\n[{i}/{len(h5_files)}] {name}\n{'=' * 72}")
         try:
-            validate_h5_file(path)
+            validate_h5_file(path, strict_annotation_check=strict_annotation_check)
             print(f"\n✓ {name} passed\n")
         except AssertionError as e:
             failures += 1

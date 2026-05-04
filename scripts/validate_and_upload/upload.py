@@ -74,7 +74,7 @@ def run_validation(base_path: str, episode_id: str) -> bool:
     target = os.path.join(base_path, f"{episode_id}.h5") if episode_id else base_path
     if os.path.isfile(target):
         try:
-            validate_h5_file(target)
+            validate_h5_file(target, strict_annotation_check=True)
             print(f"\n✓ {os.path.basename(target)} passed\n")
             return 0
         except AssertionError as e:
