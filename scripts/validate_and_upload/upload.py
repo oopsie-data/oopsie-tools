@@ -85,7 +85,7 @@ def run_validation(base_path: str, episode_id: str) -> bool:
             return 1
 
     if os.path.isdir(target):
-        return validate_session_dir(target)
+        return validate_session_dir(target, strict_annotation_check=True)
 
 
 # ── Step 3: create repo (if needed) ───────────────────────────────────────────

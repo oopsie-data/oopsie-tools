@@ -8,6 +8,9 @@ with no file I/O.  This makes the same validation callable from:
 
 from __future__ import annotations
 
+import json
+from typing import Any
+
 import numpy as np
 
 from oopsie_tools.utils.validation.episode_data import EpisodeData
@@ -28,9 +31,8 @@ def validate_episode(data: EpisodeData, strict_annotation_check: bool = False) -
         _validate_profile_consistency(data)
     _validate_trajectory_lengths(data)
     _validate_video_specs(data)
-    if data.annotations is not None:
-        if strict_annotation_check:
-            assert data.annotations, "Annotations dict is empty, must be provided on strict annotation check for upload"
+    if strict_annotation_check:
+        assert data.annotations, "Annotations dict is empty, must be provided for upload"
         _validate_annotations(data)
 
 
@@ -142,6 +144,45 @@ def _validate_video_specs(data: EpisodeData) -> None:
         )
 
 
+def _annotation_attr_scalar_str(val: Any) -> str:
+    """Normalize HDF5 attr scalars (bytes, numpy, str) to a trimmed string."""
+    if val is None:
+        return ""
+    if isinstance(val, bytes):
+        return val.decode("utf-8", errors="replace").strip()
+    if isinstance(val, str):
+        return val.strip()
+    if isinstance(val, np.generic):
+        return _annotation_attr_scalar_str(val.item())
+    if isinstance(val, np.ndarray) and val.shape == ():
+        return _annotation_attr_scalar_str(val.item())
+    return str(val).strip()
+
+
+def _failure_trio_fill_flags(attrs: dict[str, Any]) -> tuple[bool, bool, bool]:
+    """Whether failure_category, failure_description, and severity are each considered filled."""
+    desc_ok = bool(_annotation_attr_scalar_str(attrs.get("failure_description", "")))
+
+    tax_raw = _annotation_attr_scalar_str(attrs.get("taxonomy", ""))
+    cat_ok = False
+    sev_ok = False
+    if tax_raw:
+        try:
+            tax = json.loads(tax_raw)
+        except json.JSONDecodeError:
+            tax = None
+        if isinstance(tax, dict):
+            fc = tax.get("failure_category")
+            if isinstance(fc, (list, tuple)):
+                cat_ok = len(fc) > 0
+            elif fc is not None:
+                cat_ok = bool(str(fc).strip())
+            sev = tax.get("severity")
+            sev_ok = bool(_annotation_attr_scalar_str(sev if sev is not None else ""))
+
+    return cat_ok, desc_ok, sev_ok
+
+
 def _validate_annotations(data: EpisodeData) -> None:
     """Each annotator subgroup must have a numeric success score in [0.0, 1.0]."""
     assert data.annotations, "annotations dict is empty"
@@ -164,4 +205,13 @@ def _validate_annotations(data: EpisodeData) -> None:
         )
         assert 0.0 <= success <= 1.0, (
             f"episode_annotations/{annotator}/success out of range [0.0, 1.0]: {success}"
+        )
+
+        # TODO: Make sure this is working as expected
+        cat_ok, desc_ok, sev_ok = _failure_trio_fill_flags(attrs)
+        filled = int(cat_ok) + int(desc_ok) + int(sev_ok)
+        assert filled in (0, 3), (
+            f"episode_annotations/{annotator}: failure_category (taxonomy), "
+            f"failure_description, and severity must be all filled or all empty "
+            f"(found {filled} of 3 filled). Either complete all three or leave all three empty."
         )

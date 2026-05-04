@@ -18,21 +18,16 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "path",
+        "--path",
         type=str,
         help="Path to a single .h5 file or a session directory containing .h5 files",
-    )
-    parser.add_argument(
-        "--strict_annotation_check",
-        action="store_true",
-        help="If set, require that annotations are present and non-empty (recommended for upload validation)",
     )
     args = parser.parse_args()
     target = os.path.abspath(os.path.normpath(args.path))
 
     if os.path.isfile(target):
         try:
-            validate_h5_file(target, strict_annotation_check=args.strict_annotation_check)
+            validate_h5_file(target, strict_annotation_check=True)
             print(f"\n✓ {os.path.basename(target)} passed\n")
             return 0
         except AssertionError as e:
@@ -43,7 +38,7 @@ def main() -> int:
             return 1
 
     if os.path.isdir(target):
-        return validate_session_dir(target)
+        return validate_session_dir(target, strict_annotation_check=True)
 
     print(f"\n✗ Path does not exist: {target}\n")
     return 1
