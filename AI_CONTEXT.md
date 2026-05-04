@@ -120,7 +120,7 @@ Ask the user:
 Minimal integration pattern:
 ```python
 from oopsie_tools.annotation_tool.episode_recorder import EpisodeRecorder
-from oopsie_tools.utils.robot_profile import load_robot_profile
+from oopsie_tools.utils.robot_profile.robot_profile import load_robot_profile
 
 profile = load_robot_profile("configs/robot_profiles/<your_profile>.yaml")
 recorder = EpisodeRecorder(
