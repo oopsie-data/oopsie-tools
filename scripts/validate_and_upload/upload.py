@@ -76,13 +76,13 @@ def run_validation(base_path: str, episode_id: str) -> bool:
         try:
             validate_h5_file(target, strict_annotation_check=True)
             print(f"\n✓ {os.path.basename(target)} passed\n")
-            return 0
+            return 1
         except AssertionError as e:
             print(f"\n✗ Validation failed: {e}\n")
-            return 1
+            return 0
         except Exception as e:
             print(f"\n✗ Unexpected error: {e}\n")
-            return 1
+            return 0
 
     if os.path.isdir(target):
         return validate_session_dir(target, strict_annotation_check=True)

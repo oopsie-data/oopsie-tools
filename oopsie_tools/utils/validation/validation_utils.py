@@ -36,12 +36,12 @@ def validate_session_dir(session_dir: str, strict_annotation_check: bool = False
     """Validate every ``*.h5`` / ``*.hdf5`` file in a session directory.
 
     Returns:
-        0 if all files passed, 1 if any failed or the directory is invalid.
+        1 if all files passed, 0 if any failed or the directory is invalid.
     """
     session_path = os.path.abspath(os.path.normpath(session_dir))
     if not os.path.isdir(session_path):
         print(f"\n✗ Not a directory: {session_path}\n")
-        return 1
+        return 0
 
     # find all hdf5 files recursively in the session directory
     h5_files = [
@@ -52,7 +52,7 @@ def validate_session_dir(session_dir: str, strict_annotation_check: bool = False
 
     if not h5_files:
         print(f"\n✗ No .h5 or .hdf5 files found in {session_path}\n")
-        return 1
+        return 0
 
     print(f"\nValidating {len(h5_files)} HDF5 file(s) in: {session_path}\n")
     failures = 0
@@ -71,4 +71,4 @@ def validate_session_dir(session_dir: str, strict_annotation_check: bool = False
 
     passed = len(h5_files) - failures
     print(f"Summary: {passed}/{len(h5_files)} passed.\n")
-    return 1 if failures else 0
+    return 0 if failures else 1
