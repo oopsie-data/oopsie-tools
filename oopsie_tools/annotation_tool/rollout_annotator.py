@@ -180,6 +180,7 @@ class WebRolloutAnnotator:
 
         # 2. Save the episode HDF5 immediately after rollout to disk (before annotation arrives).
         h5_path = active_recorder.save(
+            data
         )
 
         # 3. Wait for annotation from human annotator
