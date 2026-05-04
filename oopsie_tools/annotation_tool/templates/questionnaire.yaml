@@ -8,10 +8,15 @@ questions:
       - "Success"
       - "Failure"
 
+  - id: failure_description
+    type: textarea
+    label: "Describe what went wrong"
+    required: false
+
   - id: failure_category
     type: checkbox
     label: "Failure categories (select all that apply)"
-    required: true
+    required: false
     options:
       - name: "Reaching failure (pre contact)"
         long_form: "Failure to reach the target object or location, resulting in no contact being made. If a grasp just barely misses the object, please count this as a grasp failure rather than a reaching failure."
@@ -27,11 +32,8 @@ questions:
         long_form: "Failure due to hardware or mechanical issues."
       - name: "Task not attempted"
         long_form: "Task was not attempted due to some reason. This should be used in case the robot makes no discernible attempt at a task, e.g. by stalling."
-
-  - id: failure_description
-    type: textarea
-    label: "Describe what went wrong"
-    required: true
+      - name: "Other"
+        long_form: "Other failure category not listed above."
 
   - id: severity
     type: radio
