@@ -21,11 +21,11 @@ from pathlib import Path
 import numpy as np
 
 # Add validate script to path so it can be imported without installation.
-sys.path.insert(0, str(Path(__file__).resolve().parent / "validate_and_upload"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "scripts/validate_and_upload"))
 from validate import validate_session_dir  # noqa: E402
 
 from oopsie_tools.annotation_tool.episode_recorder import EpisodeRecorder
-from oopsie_tools.utils.robot_profile import RobotProfile
+from oopsie_tools.utils.robot_profile.robot_profile import RobotProfile
 
 
 # ── Robot configuration ───────────────────────────────────────────────────────

@@ -118,12 +118,10 @@ def _write_base_h5(
     f.attrs["lab_id"] = "test_lab"
     f.attrs["timestamp"] = time.time()
 
-    img_obs = f.create_group("image_observations")
-    for cam, rel_path in camera_video_paths.items():
-        img_obs.create_dataset(cam, data=rel_path, dtype=_STR_DTYPE)
-
     obs_group = f.create_group("observations")
-    obs_group.create_group("video_paths")
+    vp_group = obs_group.create_group("video_paths")
+    for cam, rel_path in camera_video_paths.items():
+        vp_group.create_dataset(cam, data=rel_path, dtype=_STR_DTYPE)
     rs = obs_group.create_group("robot_states")
     for key, arr in _robot_states(n_steps).items():
         rs.create_dataset(key, data=arr, dtype=np.float64)

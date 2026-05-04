@@ -27,7 +27,7 @@ import numpy as np
 from moviepy.editor import ImageSequenceClip
 
 from oopsie_tools.annotation_tool.episode_recorder import EpisodeRecorder
-from oopsie_tools.utils.robot_profile import RobotProfile
+from oopsie_tools.utils.robot_profile.robot_profile import RobotProfile
 
 
 class WebRolloutAnnotator:
@@ -150,12 +150,22 @@ class WebRolloutAnnotator:
             raise ValueError("EpisodeRecorder is required (pass recorder=...).")
         sample_id = self._active_recorder.save_fname
 
+        data = {
+                "language_instruction": instruction,
+                "metadata": {
+                    "episode_id": sample_id,
+                    "operator_name": self.operator_name,
+                },
+            }
+        self._active_recorder._validate_episode_data(data)  # raises if invalid, to avoid saving unwritable data
+
         # 1. Save videos under the recorder's per-session folder
         video_paths = active_recorder._save_videos()
         video_urls = {
             cam: self._video_url_from_abs_path(Path(p))
             for cam, p in video_paths.items()
         }
+        data["video_paths"] = video_paths
 
         # Save the episode HDF5 immediately after rollout (before annotation arrives).
         # We will patch failure_annotation in-place later.
@@ -170,14 +180,6 @@ class WebRolloutAnnotator:
 
         # 2. Save the episode HDF5 immediately after rollout to disk (before annotation arrives).
         h5_path = active_recorder.save(
-            {
-                "language_instruction": instruction,
-                "metadata": {
-                    "episode_id": sample_id,
-                    "operator_name": self.operator_name,
-                },
-                "video_paths": video_paths,
-            }
         )
 
         # 3. Wait for annotation from human annotator
